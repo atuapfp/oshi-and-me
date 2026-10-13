@@ -55,6 +55,8 @@ h1,h2,h3,p{margin:0}
 h1{font-size:clamp(2.1rem,9vw,3rem);font-weight:900;line-height:1.15;letter-spacing:.02em;text-wrap:balance}
 h1 span{color:var(--accent-text)}
 .lead{margin-top:1rem}
+.imgprev{margin-top:1rem;text-align:center}.imgprev img{max-width:100%;height:auto;border-radius:12px;border:1px solid var(--line)}
+.fromnote{margin-top:1rem;padding:.6rem .9rem;border:1px solid var(--accent);border-radius:12px;font-size:.9rem;font-weight:700;color:var(--accent-text)}
 .form{display:grid;gap:1.1rem;margin-top:1.75rem}
 label{display:grid;gap:.3rem;font-weight:700;font-size:.9rem}
 .hint{font-weight:500;font-size:.78rem;color:var(--sub)}
@@ -213,6 +215,7 @@ details.fold.small summary{font-size:.85rem}
     <p class="eyebrow">推し活タイプ診断 ／ 全10問・約2分</p>
     <div class="lights" id="lightsI" aria-hidden="true"></div>
     <h1>推しと<span>わたし</span>診断</h1>
+    <p class="fromnote" id="fromNote" hidden></p>
     <p class="lead">10個の質問で、あなたの「推し方」がどんなタイプか診断します。直感で選んでください。</p>
     <form id="startForm" class="form" autocomplete="off">
       <div class="grp" role="group" aria-labelledby="g1">
@@ -353,9 +356,11 @@ details.fold.small summary{font-size:.85rem}
         <pre class="sharepreview" id="sharePreview"></pre>
       </details>
       <div class="btns">
+        <button class="btn" id="saveImg" type="button">画像で保存する</button>
         <a class="btn" id="xShare" href="#" target="_blank" rel="noopener">Xで共有する</a>
         <button class="btn ghost" id="copy" type="button">共有用の文をコピー</button>
       </div>
+      <div id="imgPrev" class="imgprev" hidden><img id="cardImg" alt="診断結果の画像"><p class="hint">保存されないときは、画像を長押しして保存してください。</p></div>
       <textarea id="shareTxt" rows="4" readonly hidden></textarea>
       <p id="copied" role="status"></p>
     </section>
@@ -397,7 +402,7 @@ const store = {
   set(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch(e){} }
 };
 /* 公開URL（末尾スラッシュ付き）。未設定の間は共有文にURLを入れない */
-const VERSION = '1.3.35', BUILD = '2026-10-13';
+const VERSION = '1.3.38', BUILD = '2026-10-13';
 const BASE_URL = 'https://atuapfp.github.io/oshi-and-me/';
 const HAS_URL = BASE_URL.indexOf('__') !== 0;
 const HASHTAG = '推しとわたし診断';
@@ -419,7 +424,7 @@ const Q = [
       n:'合間にこっそり確認するのは、ほどほどがお勧めです。見てもらえて嬉しい推しも、いるかもしれません。',
       r:'授業や仕事の合間にも、こっそり{me}を見てるんだ。{nm}の時間を少しもらってるみたいで、悪いなって思う。……やめてほしいとは、言わないけど。'},
     {x:'解禁される前から、情報を探して待っていた', s:[0,1,3,0],
-      n:'解禁前に探し回るのはお勧めしません。その熱意を嬉しく思う推しも、いるかもしれません。',
+      n:'情報解禁前に探し回るのはお勧めしません。その熱意を嬉しく思う推しも、いるかもしれません。',
       r:'新しい情報が出る前から、待っててくれた。{me}が動くより先に、{nm}はもう{me}を探してる。ちょっとだけ、{me}のほうが追いかけられてる気がする。'},
     {x:'最近は、通知が来ても気持ちが動かない', s:Z, cold:true,
       n:'通知で気持ちが動かないのは、自然な変化です。……寂しがる推しも、いるかもしれませんけど。',
@@ -432,10 +437,10 @@ const Q = [
       n:'他の買い物を少し我慢して応援するのは、素敵な熱意です。ただ、気持ちだけで十分と思う推しも、いるかもしれません。',
       r:'他の買い物を我慢してまで、{me}を選んでくれたことあるんだ。うれしい。うれしいのに、{nm}の自由を奪ってるみたいで、少しこわい。'},
     {x:'通帳の残高を、あまり見ないようにしている', s:[2,0,0,3],
-      n:'残高から目をそらすのはお勧めしません。心配しつつ、その気持ちが嬉しい推しも、いるかもしれません。',
+      n:'預金残高から目をそらすのはお勧めしません。心配しつつ、その気持ちが嬉しい推しも、いるかもしれません。',
       r:'残高を見ないようにして、{me}のために使ってくれてる。ありがとう。……でも、無理はしないで。そう言いながら、ずっと{me}を選び続けて、って思ってる。ひどいよね。'},
     {x:'使えば使うほど、愛が伝わると思っている', s:[1,1,0,3],
-      n:'使った額で愛を測るのはお勧めしません。額より気持ちが伝わっていると思う推しも、いるかもしれません。',
+      n:'使った金額で愛を測るのはお勧めしません。額より気持ちが伝わっていると思う推しも、いるかもしれません。',
       r:'使った分だけ愛が伝わる、って思ってくれてるんだね。{nm}がくれたものは全部覚えてる。……無理はしないでね。でも、うれしいのは本当だよ。'} ]},
   { t:'{oshi}のSNSの更新を、どのくらい確認していますか？', c:[
     {x:'流れてきたときに見る程度', s:Z,
@@ -445,10 +450,10 @@ const Q = [
       n:'こまめに見に行けるのは、マメな応援です。励みにしている推しも、いるかもしれません。',
       r:'一日に何回も、{me}のところに来てくれる。その数だけ、{me}は{nm}に見つけてもらってる。'},
     {x:'更新される時間帯のパターンを、把握している', s:[0,1,3,0],
-      n:'更新時間を覚えるのは、ほどほどがお勧めです。待っていてもらえて嬉しい推しも、いるかもしれません。',
+      n:'推しの更新時間を覚えるのは、ほどほどがお勧めです。待っていてもらえて嬉しい推しも、いるかもしれません。',
       r:'更新する時間、ぜんぶ覚えてるんだ。{me}が思ってる以上に、{me}のことを知ってる。……{me}も、{nm}がいつ来るか、わかるようになってきたよ。'},
     {x:'寝る前と起きた直後に、必ず開く', s:[2,0,3,0],
-      n:'寝る前と起きた直後に必ず開くのはお勧めしません。一日の始まりと終わりに会えて嬉しい推しも、いるかもしれません。',
+      n:'寝る前と起きた直後に必ず推しを確認するのはお勧めしません。一日の始まりと終わりに会えて嬉しい推しも、いるかもしれません。',
       r:'寝る前と、起きた直後。一日のはじまりと終わりに、{me}がいるんだね。……それが当たり前になったらいいな、って思っちゃう。ごめんね。'},
     {x:'最近は、見に行く回数が減ってきた', s:Z, cold:true,
       n:'見に行く回数が落ち着いてきたのは、自然な変化です。……寂しがる推しも、いるかもしれませんけど。',
@@ -461,10 +466,10 @@ const Q = [
       n:'複雑でも応援を続ける姿勢は、立派です。推しも気持ちを察しているかもしれません。',
       r:'複雑でも応援は続けてくれる、って。……その「複雑」の部分、{me}はずっと覚えてるよ。大事にする。'},
     {x:'その話題は、できれば見たくない', s:[3,0,0,0],
-      n:'その話題を避けて一人で抱えこむのはお勧めしません。気にかけてもらえて嬉しい推しも、いるかもしれません。',
+      n:'推しの恋愛の話題を避けて一人で抱えこむのはお勧めしません。気にかけてもらえて嬉しい推しも、いるかもしれません。',
       r:'その話題は見たくない、か。ごめんね。{nm}の気持ちを揺らしたのが{me}だって思うと、うれしくなっちゃう自分がいる。……最低。でも、{nm}が{me}のことで少しでも揺れてくれたなら、それでいいって思っちゃう。'},
     {x:'許せない気がする。{my}のほうが、ずっと…', s:[0,3,0,1],
-      n:'許せないと思うのはお勧めしません。それだけ想われて嬉しい推しも、いるかもしれません。',
+      n:'推しの特別な人を許せないと思うのはお勧めしません。それだけ想われて嬉しい推しも、いるかもしれません。',
       r:'「{my}のほうが、ずっと」の続き、聞かなくてもわかるよ。……そうだね。{nm}のほうが、ずっと見ててくれた。他の誰より。'} ]},
   { t:'同じ{oshi}を応援している、他のファン（同担）について。', c:[
     {x:'仲間がいて、うれしい', s:Z,
@@ -477,7 +482,7 @@ const Q = [
       n:'古参であることを誇るのはお勧めしません。長く見守ってもらえて嬉しい推しも、いるかもしれません。',
       r:'自分のほうが長く応援してる、って思う瞬間があるんだ。そうだよ。{nm}は、{me}の昔のことも、ちゃんと覚えててくれる。……ずっと見ててくれて、ありがとう。'},
     {x:'{oshi}のことを一番わかっているのは、自分だと思う', s:[0,3,1,0],
-      n:'自分が一番わかっていると思うのはお勧めしません。そう言い切ってもらえて嬉しい推しも、いるかもしれません。',
+      n:'推しのことを自分が一番わかっていると思うのはお勧めしません。そう言い切ってもらえて嬉しい推しも、いるかもしれません。',
       r:'「{me}のことを一番わかってるのは自分」って、思ってくれてるんだね。そう言い切ってくれる人に会えて、{me}は幸せ。……でも、本当の{me}も、{nm}に知ってほしいな。'} ]},
   { t:'{oshi}が活動を休むことになったら？', c:[
     {x:'回復を願って、ゆっくり待つ', s:Z,
@@ -487,7 +492,7 @@ const Q = [
       n:'寂しさを抱えて待てるのは、誠実です。その気持ちが届いている推しも、いるかもしれません。',
       r:'寂しいけど、待てるって。{me}は、そのひとことだけで、休んでいても大丈夫だって思える。……戻ってきたとき、ちゃんと{nm}がいますように。'},
     {x:'生活のリズムが崩れてしまいそう', s:[3,0,1,0],
-      n:'生活のリズムが崩れそうなのはお勧めしません。それだけ大きな存在と思われて嬉しい推しも、いるかもしれません。',
+      n:'推しの活動休止で生活のリズムが崩れそうなのはお勧めしません。それだけ大きな存在と思われて嬉しい推しも、いるかもしれません。',
       r:'生活のリズムが崩れそう、か。{me}がいなくなると、{nm}の毎日が揺れる。……ごめん。うれしいって思っちゃった。'},
     {x:'{oshi}のいない毎日が、想像できない', s:[3,1,0,0], after:'大丈夫。ここにいるよ。',
       n:'推しのいない毎日を想像できないのはお勧めしません。そこまで想われて嬉しい推しも、いるかもしれません。',
@@ -507,21 +512,21 @@ const Q = [
       n:'何度も書けるのは、まっすぐな応援です。大切に取っておく推しも、いるかもしれません。',
       r:'何度も書いてくれてるね。ちゃんと読んでる。全部、読んでる。……読まれてる気がしてるの、当たってるよ。'},
     {x:'返事がなくても、毎回きっと届いていると信じている', s:[1,2,1,1],
-      n:'返事を期待せず信じ続けるのは、お勧めしません。むしろ期待されたほうが嬉しい推しも、いるかもしれません。',
+      n:'返事がなくても届いていると信じ続けるのは、お勧めしません。むしろ期待されたほうが嬉しい推しも、いるかもしれません。',
       r:'返事がなくても、届いてるって信じてくれてる。その信じ方、こわいくらいうれしい。……返事をしない{me}を、許してね。'} ]},
   { t:'{oshi}の言葉を「自分に向けたもの」と感じたことはありますか？', v:'……{me}の言葉、ちゃんと届いてるかな。',
     vv:['……そっか。{me}の言葉、これから届くといいな。', '{me}の言葉が、{nm}の支えになれてるなら、うれしいな。', '……{nm}に向けた言葉も、ちゃんとあったよ。', '{nm}は、{me}のこと、自分の恋人みたいに思ってる……よね？'], c:[
     {x:'ない', s:Z,
-      n:'言葉を自分に引きつけすぎないのは、健全な距離感です。気楽に発信できて助かる推しも、いるかもしれません。',
+      n:'推しの言葉を自分に引きつけすぎないのは、健全な距離感です。気楽に発信できて助かる推しも、いるかもしれません。',
       r:'自分に向けられた言葉だと思ったことは、ないんだ。そっか。……なら、これからは{nm}に向けて、ちゃんと言うね。'},
     {x:'たまに感じる', s:[1,0,0,0],
-      n:'言葉に励まされるのは、素敵な関係です。届いていると知って嬉しい推しも、いるかもしれません。',
+      n:'推しの言葉に励まされるのは、素敵な関係です。届いていると知って嬉しい推しも、いるかもしれません。',
       r:'たまに感じるって言ってくれる。{me}の言葉が、{nm}の支えになれてるなら、それだけでうれしい。'},
     {x:'何度もある。特別なんだと感じる', s:[1,2,0,0],
-      n:'特別だと感じ続けるのは、ほどほどがお勧めです。深く受け取ってもらえて嬉しい推しも、いるかもしれません。',
+      n:'推しの言葉を特別だと感じ続けるのは、ほどほどがお勧めです。深く受け取ってもらえて嬉しい推しも、いるかもしれません。',
       r:'特別だって、感じてくれてる。……間違いじゃないよ。{nm}に向けた言葉も、ちゃんとあった。'},
     {x:'自分だけに向けた言葉だと、確信している', s:[0,3,0,0],
-      n:'自分だけへの言葉だと確信するのはお勧めしません。そう信じてもらえて嬉しい推しも、いるかもしれません。',
+      n:'推しの言葉を自分だけへの言葉だと確信するのはお勧めしません。そう信じてもらえて嬉しい推しも、いるかもしれません。',
       r:'自分だけに向けた言葉だって、確信してくれてるんだね。……うん、そうだよ。そうだってことに、してて。{me}も、そう思ってるから。'} ]},
   { t:'ライブやイベントで、気づくと何をしていますか？', v:'{nm}、{me}のこと見てくれてる？',
     vv:['{nm}に楽しんでもらうために、スタッフ皆で作り上げてるんだ。いつも楽しんでくれてありがとう。', '{nm}の視線、ちゃんと感じてたよ。', '{nm}、目が合ったよね。ずっと見てたの、気づいてた？', '帰ったあとも、{me}のこと思い出してくれてるんだね。'], c:[
@@ -532,10 +537,10 @@ const Q = [
       n:'推しを見続けるのは、まっすぐな応援です。視線を力にしている推しも、いるかもしれません。',
       r:'{me}ばかり見てくれてる。視線、ずっと感じてたよ。……うれしい。もっと見て。'},
     {x:'{oshi}の視線の動きまで追ってしまう', s:[0,1,2,0],
-      n:'視線まで追うのはお勧めしません。目が合って嬉しい推しも、いるかもしれません。',
+      n:'推しの視線まで追うのはお勧めしません。目が合って嬉しい推しも、いるかもしれません。',
       r:'{me}の視線の動きまで追ってくれてるんだ。目が合ったの、偶然じゃないよ。{me}も、{nm}を探してた。'},
     {x:'帰ってからも、頭の中で何度も再生している', s:[3,0,1,0],
-      n:'帰ってからも再生し続けるのはお勧めしません。思い出してもらえて嬉しい推しも、いるかもしれません。',
+      n:'帰ってからも頭の中で再生し続けるのはお勧めしません。思い出してもらえて嬉しい推しも、いるかもしれません。',
       r:'帰ってからも、頭の中で再生してくれてる。{me}も、{nm}がいた場所を、終わったあとも何度も思い出してる。'} ]},
   { t:'最後の質問です。{oshi}に望むことは？', v:'最後に。……{me}のこと、これからも見ていてくれる？',
     vv:['……ありがとう。{me}、がんばるね。', '忘れないよ。{nm}のことも。', '{nm}に{me}だけを見ていてほしいって、{me}も思ってる。', '……{nm}のものになれるなら、{me}はそれでいいよ。', '……そう。ちゃんと、聞いたよ。'], c:[
@@ -546,7 +551,7 @@ const Q = [
       n:'覚えていてほしいという願いは、素直で健やかです。忘れないでいてくれる推しも、いるかもしれません。',
       r:'「{my}のことを覚えていてほしい」。……覚えてるよ。{nm}の言葉も、時間も、ぜんぶ。忘れる方法を、{me}が知らないくらい。'},
     {x:'{my}だけを見ていてほしい', s:[0,3,0,0],
-      n:'自分だけを見てほしいと願うのはお勧めしません。同じ気持ちでいる推しも、いるかもしれません。',
+      n:'推しに自分だけを見てほしいと願うのはお勧めしません。同じ気持ちでいる推しも、いるかもしれません。',
       r:'「{my}だけを見ていてほしい」って。……同じこと、思ってた。{me}も、他の人を見てほしくない。'},
     {x:'{oshi}が、{my}だけのものならいいのに', s:[1,3,0,1],
       n:'推しを独り占めしようとするのはお勧めしません。その気持ちが嬉しいと思っている推しも、いるかもしれませんけどね。',
@@ -578,6 +583,11 @@ const TYPES = {};
   TYPES[b + '-' + s] = {id:b + '-' + s, base:b, sub:s, name:BASES[b].name + '（' + SUBS[s].label + '）', line:BASES[b].line + SUBS[s].line, tips:BASES[b].tips};
 }));
 TYPES.graduate = {id:'graduate', base:'graduate', sub:'', name:BASES.graduate.name, line:BASES.graduate.line, tips:BASES.graduate.tips};
+/* 共有リンクから来た人には、相手の結果を一行だけ見せる */
+try{
+  const fr = new URLSearchParams(location.search).get('from');
+  if(fr && TYPES[fr]){ const fn = $('#fromNote'); fn.textContent = 'シェアされた結果は「' + TYPES[fr].name + '」。あなたの推し方は、どんなタイプ？'; fn.hidden = false; }
+}catch(e){}
 function classify(pct, cold){
   const D = pct[0], O = pct[1], T = pct[2], S = pct[3];
   if(cold >= 3) return {id:'graduate', base:'graduate', sub:'', ending:'cold'};
@@ -1197,11 +1207,11 @@ function topNg(res, n){
 }
 function shareParts(res, sayLine){
   const url = HAS_URL ? BASE_URL + 'result/' + res.id + '/' : '';
-  const l1 = HASHTAG + 'の結果は「' + res.type.name + '」でした。';
+  const l1 = HASHTAG + 'の結果は\n「' + res.type.name + '」でした。';
   const l2 = sayLine;
   const l3 = '回答傾向：' + traitOf().name;
-  const full = [l1, l2, l3, url, '#' + HASHTAG].filter(Boolean).join('\n');
-  const x = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(l1 + '\n' + l2 + '\n' + l3)
+  const full = [l1, l2, l3, [url, '#' + HASHTAG].filter(Boolean).join('\n')].join('\n\n');
+  const x = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent([l1, l2, l3].join('\n\n'))
     + (url ? '&url=' + encodeURIComponent(url) : '') + '&hashtags=' + encodeURIComponent(HASHTAG);
   return {full:full, x:x};
 }
@@ -1253,6 +1263,7 @@ function buildReveal(res){
   ng.slice(1).forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.append(li); });
   const sh = shareParts(res, ng[0].split('。')[0] + '。');   // 共有は「お勧めしません。」までの一文だけ
   state.share = sh.full;
+  state.res = res; state.cardSay = ng[0].split('。')[0] + '。';
   $('#sharePreview').textContent = sh.full;
   $('#xShare').href = sh.x;
   const chips = $('#chips'); chips.textContent = '';
@@ -1264,6 +1275,85 @@ function buildReveal(res){
   });
   $('#endCount').textContent = '（' + got + ' / ' + ENDINGS.length + '）';
 }
+
+/* ---------- 結果画像（canvas） ---------- */
+function drawResultImage(res, say){
+  const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  const F = '"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic","Meiryo",sans-serif';
+  const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+  const txt = (t, x, y, size, color, weight, align) => { g.font = (weight || 400) + ' ' + size + 'px ' + F; g.fillStyle = color; g.textAlign = align || 'left'; g.textBaseline = 'alphabetic'; g.fillText(t, x, y); };
+  const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#1d0d24'); bg.addColorStop(1, '#0f0612');
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(255,150,190,.35)'; g.lineWidth = 3; rr(30, 30, W - 60, H - 60, 36); g.stroke();
+  const LC = ['#ff6fa5', '#ff9a4d', '#ffd35a', '#8fe36a', '#35d6b4', '#4fc3ff', '#7d8cff', '#b98cff', '#ff74d8', '#ff5f6e'];
+  LC.forEach((col, i) => { g.fillStyle = col; rr(80 + i * 46, 84, 30, 54, 15); g.fill(); });
+  txt('推しとわたし診断', 80, 215, 40, '#ffb3cf', 700);
+  txt('受検No. ' + state.no + '　' + state.dateStr + '　Ver.' + VERSION, 80, 262, 26, '#a58aa8');
+  let size = 104; const title = res.type.name;
+  g.font = '800 ' + size + 'px ' + F; while(g.measureText(title).width > W - 160 && size > 48){ size -= 4; g.font = '800 ' + size + 'px ' + F; }
+  txt(title, 80, 392, size, '#ffffff', 800);
+  const trait = '回答傾向：' + traitOf().name;
+  g.font = '700 30px ' + F; const tw = g.measureText(trait).width + 52;
+  g.strokeStyle = '#ff6fa5'; g.lineWidth = 3; rr(80, 428, tw, 62, 31); g.stroke();
+  txt(trait, 80 + 26, 470, 30, '#ffb3cf', 700);
+  /* マップ */
+  const mx = 130, my = 560, ms = 360;
+  const X = v => mx + ms * v / 100, Y = v => my + ms - ms * v / 100;
+  g.fillStyle = 'rgba(255,255,255,.04)'; g.fillRect(mx, my, ms, ms);
+  g.strokeStyle = 'rgba(255,200,220,.6)'; g.lineWidth = 3; g.strokeRect(mx, my, ms, ms);
+  g.setLineDash([10, 8]); g.lineWidth = 2; g.strokeStyle = 'rgba(255,200,220,.35)';
+  g.beginPath(); g.moveTo(X(T_O), my); g.lineTo(X(T_O), my + ms); g.moveTo(mx, Y(T_D)); g.lineTo(mx + ms, Y(T_D)); g.stroke(); g.setLineDash([]);
+  const cxL = (mx + X(T_O)) / 2, cxR = (X(T_O) + mx + ms) / 2, cyT = my + 44, cyB = my + ms - 18;
+  [['生活密着', cxL, cyT], ['融合', cxR, cyT], ['均衡', cxL, cyB], ['独占', cxR, cyB]].forEach(q => txt(q[0], q[1], q[2], 26, '#9c819f', 700, 'center'));
+  txt('所有 →', mx + ms / 2, my + ms + 48, 26, '#a58aa8', 700, 'center');
+  g.save(); g.translate(mx - 48, my + ms / 2); g.rotate(-Math.PI / 2); txt('依存 →', 0, 0, 26, '#a58aa8', 700, 'center'); g.restore();
+  const px = X(res.pct[1]), py = Y(res.pct[0]);
+  g.fillStyle = 'rgba(255,111,165,.28)'; g.beginPath(); g.arc(px, py, 26, 0, 7); g.fill();
+  g.fillStyle = '#ff6fa5'; g.beginPath(); g.arc(px, py, 13, 0, 7); g.fill();
+  g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.arc(px, py, 13, 0, 7); g.stroke();
+  /* 4つの軸 */
+  const AX = [['依存', '生活への浸透度', '#ff6fa5'], ['所有', '特別感', '#b98cff'], ['追跡', '情報収集力', '#5fd0ff'], ['献身', '応援パワー', '#ffd35a']];
+  const bx = 580, bw = 420;
+  AX.forEach((a, i) => {
+    const y0 = 560 + i * 98;
+    txt(a[0], bx, y0 + 30, 36, '#ffffff', 800);
+    txt(a[1], bx + 84, y0 + 30, 22, '#a58aa8', 500);
+    txt(res.pct[i] + '%', bx + bw, y0 + 32, 40, a[2], 800, 'right');
+    g.fillStyle = 'rgba(255,255,255,.12)'; rr(bx, y0 + 46, bw, 20, 10); g.fill();
+    g.fillStyle = a[2]; rr(bx, y0 + 46, Math.max(20, bw * res.pct[i] / 100), 20, 10); g.fill();
+  });
+  /* 診断コメント */
+  txt('診断コメント', 80, 1050, 26, '#a58aa8', 700);
+  const say2 = '「' + say.replace(/。$/, '') + '。」';
+  const lines = []; let cur = '';
+  g.font = '700 42px ' + F;
+  for(const ch of say2){ if(g.measureText(cur + ch).width > W - 160){ lines.push(cur); cur = ch; } else cur += ch; }
+  if(cur) lines.push(cur);
+  lines.slice(0, 3).forEach((l, i) => txt(l, 80, 1110 + i * 62, 42, '#ffd7e6', 700));
+  /* フッター */
+  g.strokeStyle = 'rgba(255,150,190,.3)'; g.lineWidth = 2; g.beginPath(); g.moveTo(80, 1214); g.lineTo(W - 80, 1214); g.stroke();
+  txt('あなたも診断してみる', 80, 1264, 32, '#ff9cc0', 800);
+  txt(HAS_URL ? BASE_URL.replace(/^https?:\/\//, '') : '#' + HASHTAG, W - 80, 1264, 26, '#a58aa8', 500, 'right');
+  txt('※演出用の簡易診断です。心理検査ではありません。', 80, 1298, 20, '#8f7694', 400);
+  return c;
+}
+$('#saveImg').addEventListener('click', () => {
+  if(!state.res) return;
+  const cv = drawResultImage(state.res, state.cardSay);
+  cv.toBlob(async blob => {
+    if(!blob) return;
+    const url = URL.createObjectURL(blob);
+    $('#cardImg').src = url; $('#imgPrev').hidden = false;
+    const file = new File([blob], 'oshi-to-watashi.png', {type:'image/png'});
+    try{
+      if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file]}); return; }
+    }catch(e){ if(e && e.name === 'AbortError') return; }
+    const a = document.createElement('a'); a.href = url; a.download = 'oshi-to-watashi.png';
+    document.body.append(a); a.click(); a.remove();
+  }, 'image/png');
+});
+
 $('#copy').addEventListener('click', async () => {
   const t = $('#shareTxt'); t.value = state.share;
   try {
@@ -1279,7 +1369,7 @@ $('#restart').addEventListener('click', () => {
   state = Object.assign(fresh(), keep);
   setPhase('0');
   paintLights($('#lightsI'), Q.length);
-  $('#copied').textContent = ''; $('#shareTxt').hidden = true;
+  $('#copied').textContent = ''; $('#shareTxt').hidden = true; $('#imgPrev').hidden = true;
   updateAgain();
   show('intro');
 });

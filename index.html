@@ -390,7 +390,7 @@ const store = {
   set(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch(e){} }
 };
 /* 公開URL（末尾スラッシュ付き）。未設定の間は共有文にURLを入れない */
-const VERSION = '1.3.13', BUILD = '2026-10-13';
+const VERSION = '1.3.15', BUILD = '2026-10-13';
 const BASE_URL = 'https://atuapfp.github.io/oshi-and-me/';
 const HAS_URL = BASE_URL.indexOf('__') !== 0;
 const HASHTAG = '推しとわたし診断';
@@ -516,7 +516,7 @@ const Q = [
     {x:'自分だけに向けた言葉だと、確信している', s:[0,3,0,0],
       n:'自分だけへの言葉だと確信するのはお勧めしません。そう信じてもらえて嬉しい推しも、いるかもしれません。',
       r:'自分だけに向けた言葉だって、確信してくれてるんだね。……うん、そうだよ。そうだってことに、してて。{me}も、そう思ってるから。'} ]},
-  { t:'ライブやイベントで、気づくと何をしていますか？', v:'{nm}、いま、{me}のこと見てくれてる？',
+  { t:'ライブやイベントで、気づくと何をしていますか？', v:'{nm}、{me}のこと見てくれてる？',
     vv:['{nm}に楽しんでもらうために、スタッフ皆で作り上げてるんだ。いつも楽しんでくれてありがとう。', '{nm}の視線、ちゃんと感じてたよ。', '{nm}、目が合ったよね。ずっと見てたの、気づいてた？', '帰ったあとも、{me}のこと思い出してくれてるんだね。'], c:[
     {x:'全体を楽しんでいる', s:Z,
       n:'全体を楽しめるのは、バランスのよい観方です。場を楽しんでもらえて嬉しい推しも、いるかもしれません。',
@@ -632,6 +632,21 @@ function morph(el, to, ms){
 }
 const say = t => { $('#whisper').textContent = t; };
 function scrollEnd(el){ try { el.scrollIntoView({block:'end', behavior: reduce ? 'auto' : 'smooth'}); } catch(e){} }
+/* 手紙用：新しい行まで、ゆっくり（約1.4秒）スクロールする。読んでいる行が急に流れないように */
+let scrollTok = 0;
+function slowScroll(el){
+  if(reduce){ scrollEnd(el); return; }
+  const tok = ++scrollTok, y0 = window.scrollY || 0, dur = 1400, t0 = performance.now();
+  const target = Math.max(0, y0 + el.getBoundingClientRect().bottom - window.innerHeight + 40);
+  if(target <= y0) return;
+  const step = now => {
+    if(tok !== scrollTok) return;
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 2);
+    try { window.scrollTo(0, y0 + (target - y0) * e); } catch(_){}
+    if(k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
 /* 手紙の間は手動スクロールを止める（動きを減らす設定の人は除く） */
 const lockScroll = e => { if(state.scene === 'dark' && !reduce) e.preventDefault(); };
 ['touchmove', 'wheel'].forEach(t => window.addEventListener(t, lockScroll, {passive:false}));
@@ -917,8 +932,8 @@ function logLines(){
 function pickReactions(res){
   const idx = Q.map((q, qi) => { const ch = q.c[state.answers[qi]]; return {qi:qi, v:sum(ch.s), cold:!!ch.cold}; });
   const set = new Set(res.ending === 'healthy' ? [8, 9] : [9]);
-  if(res.ending === 'cold'){ set.clear(); idx.filter(o => o.cold).slice(0, 4).forEach(o => set.add(o.qi)); }
-  const goal = res.ending === 'cold' ? set.size : 3;
+  if(res.ending === 'cold'){ set.clear(); idx.filter(o => o.cold).slice(0, 3).forEach(o => set.add(o.qi)); }
+  const goal = res.ending === 'cold' ? Math.min(set.size, 3) : 2;
   idx.slice().sort((a, b) => b.v - a.v || a.qi - b.qi).forEach(o => { if(set.size < goal) set.add(o.qi); });
   return [...set].sort((a, b) => a - b);
 }
@@ -1091,7 +1106,7 @@ async function breakdown(){
     else if(it.retype){ text = it.retype[1]; }
     $('#letter').append(p);
     requestAnimationFrame(() => p.classList.add('in'));
-    scrollEnd(p);
+    slowScroll(p);
     if(it && it.retype && !reduce){
       await typeInto(p, it.retype[0], 85, it.retype[2] === 'rush');
       await pace(900);
@@ -1101,7 +1116,7 @@ async function breakdown(){
       await pace(900);
     } else {
       p.textContent = text;
-      await pace(600 + text.length * 32);
+      await pace(800 + text.length * 60);
     }
   }
   await wait(2200);

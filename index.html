@@ -55,7 +55,7 @@ h1,h2,h3,p{margin:0}
 h1{font-size:clamp(2.1rem,9vw,3rem);font-weight:900;line-height:1.15;letter-spacing:.02em;text-wrap:balance}
 h1 span{color:var(--accent-text)}
 .lead{margin-top:1rem}
-.imgprev{margin-top:1rem;text-align:center}.imgprev img{max-width:100%;height:auto;border-radius:12px;border:1px solid var(--line)}
+.sharecard.imgcard{padding:0;border:0;background:none}.imgcard img{display:block;width:100%;height:auto;border-radius:14px}
 .fromnote{margin-top:1rem;padding:.6rem .9rem;border:1px solid var(--accent);border-radius:12px;font-size:.9rem;font-weight:700;color:var(--accent-text)}
 .form{display:grid;gap:1.1rem;margin-top:1.75rem}
 label{display:grid;gap:.3rem;font-weight:700;font-size:.9rem}
@@ -131,7 +131,6 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
 .m-ring{fill:none;stroke:var(--accent);stroke-width:2;opacity:.35}
 .meters{display:grid;gap:.7rem;margin-top:1.1rem}
 .meter{display:grid;grid-template-columns:6.6rem minmax(0,1fr) 2.6rem;gap:.6rem;align-items:center;font-size:.8rem;font-variant-numeric:tabular-nums}
-#svMeters .meter{grid-template-columns:9.4rem minmax(0,1fr) 2.6rem;font-size:.78rem}
 .meter .tr{height:.6rem;border-radius:99px;background:var(--line);overflow:hidden}
 .meter .tr i{display:block;height:100%;width:0;background:var(--accent);transition:width 1.1s cubic-bezier(.2,.8,.2,1)}
 .meter .num{text-align:right;font-weight:700}
@@ -318,16 +317,7 @@ details.fold.small summary{font-size:.85rem}
 
   <section id="s-share" class="rev" hidden>
     <p class="eyebrow">シェアされた診断結果</p>
-    <div class="sharecard">
-      <p class="meta" id="svMeta"></p>
-      <p class="kicker">推しとわたし診断の結果</p>
-      <p class="cardtype" id="svType"></p>
-      <p class="trait" id="svTrait"></p>
-      <div class="map" id="svMap"></div>
-      <div class="meters" id="svMeters"></div>
-      <p class="say-label" id="svSayLabel">診断コメント</p>
-      <p class="say" id="svSay"></p>
-    </div>
+    <div class="sharecard imgcard"><img id="svImg" alt="シェアされた診断結果カード"></div>
     <p class="hint" style="margin-top:.8rem">演出用の簡易診断です。心理検査ではありません。</p>
     <div class="btns"><button class="btn" id="svGo" type="button">あなたも診断してみる</button></div>
   </section>
@@ -356,18 +346,10 @@ details.fold.small summary{font-size:.85rem}
     </details>
     <section>
       <h3>結果カード</h3>
-      <div class="sharecard" id="shareCard">
-        <p class="meta" id="cardMeta"></p>
-        <p class="kicker">推しとわたし診断の結果</p>
-        <p class="cardtype" id="cardType"></p>
-        <p class="trait" id="cardTrait"></p>
-        <div class="map" id="cardMap"></div>
-        <p class="say-label">診断コメント</p>
-        <p class="say" id="cardSay"></p>
-        <p class="say-label">ほかのコメント</p>
-        <ul class="ngs" id="cardNg"></ul>
-        <p class="cue" aria-hidden="true">▼ 4つの軸ごとの詳しい結果は、この下にあります</p>
-      </div>
+      <div class="sharecard imgcard"><img id="cardImg" alt="診断結果カード"></div>
+      <p class="say-label">ほかのコメント</p>
+      <ul class="ngs" id="cardNg"></ul>
+      <p class="cue" aria-hidden="true">▼ 4つの軸ごとの詳しい結果は、この下にあります</p>
       <details class="fold small">
         <summary>共有される文面を見る</summary>
         <pre class="sharepreview" id="sharePreview"></pre>
@@ -377,7 +359,7 @@ details.fold.small summary{font-size:.85rem}
         <a class="btn" id="xShare" href="#" target="_blank" rel="noopener">Xで共有する</a>
         <button class="btn ghost" id="copy" type="button">共有用の文をコピー</button>
       </div>
-      <div id="imgPrev" class="imgprev" hidden><img id="cardImg" alt="診断結果の画像"><p class="hint">保存されないときは、画像を長押しして保存してください。</p></div>
+      <p class="hint">スマホでは、上の画像を長押ししても保存できます。</p>
       <textarea id="shareTxt" rows="4" readonly hidden></textarea>
       <p id="copied" role="status"></p>
     </section>
@@ -419,7 +401,7 @@ const store = {
   set(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch(e){} }
 };
 /* 公開URL（末尾スラッシュ付き）。未設定の間は共有文にURLを入れない */
-const VERSION = '1.3.39', BUILD = '2026-10-13';
+const VERSION = '1.3.43', BUILD = '2026-10-13';
 const BASE_URL = 'https://atuapfp.github.io/oshi-and-me/';
 const HAS_URL = BASE_URL.indexOf('__') !== 0;
 const HASHTAG = '推しとわたし診断';
@@ -1021,7 +1003,7 @@ function letter(res){
   });
   /* 追伸は、読み返しの誘導が全パターン共通（末尾は必ず「ずっと見てるから」）。
      卒業型・ちょうどいい距離だけ、頭に一言を足す。離席・深夜の一言は、本文（署名の前）に入れる */
-  const psTail = 'ごめんね、伝えたいことが多くて、早口になっちゃった。あとで読み返せるようにしておくよ。……読み返してる間も、ずっと見てるから。';
+  const psTail = 'ごめんね、伝えたいことが多くて。あとで読み返せるようにしておくよ。……読み返してる間も、ずっと見てるから。';
   const ps = '追伸：' + psTail;
   const situ = state.leaves > 0 ? '途中で' + away + '秒、いなかったよね。……数えてたんだ、ごめんね。'
     : (H < 5 || H >= 23) ? 'こんな時間まで起きてるの、' + me + 'だけが知ってるよ。' : '';
@@ -1273,16 +1255,14 @@ function buildReveal(res){
   $('#verdict').textContent = VERDICT[res.base];
   $('#traitLine').textContent = '回答傾向：' + traitOf().name + '　' + traitOf().line;
   const ng = topNg(res, 3);
-  $('#cardMeta').textContent = '受検No. ' + state.no + '　' + state.dateStr + '　Ver.' + VERSION;
-  $('#cardType').textContent = res.type.name;
-  $('#cardTrait').textContent = '回答傾向：' + traitOf().name;
-  buildMap($('#cardMap'), res.pct[1], res.pct[0]);
-  $('#cardSay').textContent = '「' + ng[0] + '」';
+  const say1 = ng[0].split('。')[0] + '。';
+  state.imgBlob = null;
+  renderCardImage({typeName:res.type.name, pct:res.pct, traitName:traitOf().name, say:say1,
+    meta:'受検No. ' + state.no + '　' + state.dateStr + '　Ver.' + VERSION}, $('#cardImg'), b => { state.imgBlob = b; });
   const ul = $('#cardNg'); ul.textContent = '';
   ng.slice(1).forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.append(li); });
   const sh = shareParts(res, ng[0].split('。')[0] + '。');   // 共有は「お勧めしません。」までの一文だけ
   state.share = sh.full;
-  state.res = res; state.cardSay = ng[0].split('。')[0] + '。';
   $('#sharePreview').textContent = sh.full;
   $('#xShare').href = sh.x;
   const chips = $('#chips'); chips.textContent = '';
@@ -1296,81 +1276,87 @@ function buildReveal(res){
 }
 
 /* ---------- 結果画像（canvas） ---------- */
-function drawResultImage(res, say){
+function drawResultImage(o){
   const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H;
   const g = c.getContext('2d');
   const F = '"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic","Meiryo",sans-serif';
   const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
   const txt = (t, x, y, size, color, weight, align) => { g.font = (weight || 400) + ' ' + size + 'px ' + F; g.fillStyle = color; g.textAlign = align || 'left'; g.textBaseline = 'alphabetic'; g.fillText(t, x, y); };
-  const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#1d0d24'); bg.addColorStop(1, '#0f0612');
+  const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#FFFFFF'); bg.addColorStop(1, '#EDF4F3');
   g.fillStyle = bg; g.fillRect(0, 0, W, H);
-  g.strokeStyle = 'rgba(255,150,190,.35)'; g.lineWidth = 3; rr(30, 30, W - 60, H - 60, 36); g.stroke();
+  g.strokeStyle = '#C8D5DB'; g.lineWidth = 3; rr(30, 30, W - 60, H - 60, 36); g.stroke();
   const LC = ['#ff6fa5', '#ff9a4d', '#ffd35a', '#8fe36a', '#35d6b4', '#4fc3ff', '#7d8cff', '#b98cff', '#ff74d8', '#ff5f6e'];
   LC.forEach((col, i) => { g.fillStyle = col; rr(80 + i * 46, 84, 30, 54, 15); g.fill(); });
-  txt('推しとわたし診断', 80, 215, 40, '#ffb3cf', 700);
-  txt('受検No. ' + state.no + '　' + state.dateStr + '　Ver.' + VERSION, 80, 262, 26, '#a58aa8');
-  let size = 104; const title = res.type.name;
+  txt('推しとわたし診断', 80, 215, 40, '#2A7F74', 800);
+  txt(o.meta, 80, 262, 26, '#566E7B');
+  let size = 104; const title = o.typeName;
   g.font = '800 ' + size + 'px ' + F; while(g.measureText(title).width > W - 160 && size > 48){ size -= 4; g.font = '800 ' + size + 'px ' + F; }
-  txt(title, 80, 392, size, '#ffffff', 800);
-  const trait = '回答傾向：' + traitOf().name;
-  g.font = '700 30px ' + F; const tw = g.measureText(trait).width + 52;
-  g.strokeStyle = '#ff6fa5'; g.lineWidth = 3; rr(80, 428, tw, 62, 31); g.stroke();
-  txt(trait, 80 + 26, 470, 30, '#ffb3cf', 700);
+  txt(title, 80, 392, size, '#1D2A32', 800);
+  const trait = o.traitName ? '回答傾向：' + o.traitName : '';
+  if(trait){ g.font = '700 30px ' + F; const tw = g.measureText(trait).width + 52;
+    g.strokeStyle = '#2A7F74'; g.lineWidth = 3; rr(80, 428, tw, 62, 31); g.stroke();
+    txt(trait, 80 + 26, 470, 30, '#1F6F65', 700); }
   /* マップ */
   const mx = 130, my = 560, ms = 360;
   const X = v => mx + ms * v / 100, Y = v => my + ms - ms * v / 100;
-  g.fillStyle = 'rgba(255,255,255,.04)'; g.fillRect(mx, my, ms, ms);
-  g.strokeStyle = 'rgba(255,200,220,.6)'; g.lineWidth = 3; g.strokeRect(mx, my, ms, ms);
-  g.setLineDash([10, 8]); g.lineWidth = 2; g.strokeStyle = 'rgba(255,200,220,.35)';
+  g.fillStyle = '#F4F8F9'; g.fillRect(mx, my, ms, ms);
+  g.strokeStyle = '#9FB3BC'; g.lineWidth = 3; g.strokeRect(mx, my, ms, ms);
+  g.setLineDash([10, 8]); g.lineWidth = 2; g.strokeStyle = '#C8D5DB';
   g.beginPath(); g.moveTo(X(T_O), my); g.lineTo(X(T_O), my + ms); g.moveTo(mx, Y(T_D)); g.lineTo(mx + ms, Y(T_D)); g.stroke(); g.setLineDash([]);
   const cxL = (mx + X(T_O)) / 2, cxR = (X(T_O) + mx + ms) / 2, cyT = my + 44, cyB = my + ms - 18;
-  [['生活密着', cxL, cyT], ['融合', cxR, cyT], ['均衡', cxL, cyB], ['独占', cxR, cyB]].forEach(q => txt(q[0], q[1], q[2], 26, '#9c819f', 700, 'center'));
-  txt('所有 →', mx + ms / 2, my + ms + 48, 26, '#a58aa8', 700, 'center');
-  g.save(); g.translate(mx - 48, my + ms / 2); g.rotate(-Math.PI / 2); txt('依存 →', 0, 0, 26, '#a58aa8', 700, 'center'); g.restore();
-  const px = X(res.pct[1]), py = Y(res.pct[0]);
-  g.fillStyle = 'rgba(255,111,165,.28)'; g.beginPath(); g.arc(px, py, 26, 0, 7); g.fill();
-  g.fillStyle = '#ff6fa5'; g.beginPath(); g.arc(px, py, 13, 0, 7); g.fill();
+  [['生活密着', cxL, cyT], ['融合', cxR, cyT], ['均衡', cxL, cyB], ['独占', cxR, cyB]].forEach(q => txt(q[0], q[1], q[2], 26, '#6F8793', 700, 'center'));
+  txt('所有 →', mx + ms / 2, my + ms + 48, 26, '#566E7B', 700, 'center');
+  g.save(); g.translate(mx - 48, my + ms / 2); g.rotate(-Math.PI / 2); txt('依存 →', 0, 0, 26, '#566E7B', 700, 'center'); g.restore();
+  const px = X(o.pct[1]), py = Y(o.pct[0]);
+  g.fillStyle = 'rgba(42,127,116,.22)'; g.beginPath(); g.arc(px, py, 26, 0, 7); g.fill();
+  g.fillStyle = '#2A7F74'; g.beginPath(); g.arc(px, py, 13, 0, 7); g.fill();
   g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.arc(px, py, 13, 0, 7); g.stroke();
   /* 4つの軸 */
-  const AX = [['依存', '生活への浸透度', '#ff6fa5'], ['所有', '特別感', '#b98cff'], ['追跡', '情報収集力', '#5fd0ff'], ['献身', '応援パワー', '#ffd35a']];
+  const AX = [['依存', '生活への浸透度', '#E8457F'], ['所有', '特別感', '#8E5BE0'], ['追跡', '情報収集力', '#1E9BD6'], ['献身', '応援パワー', '#E5A000']];
   const bx = 580, bw = 420;
   AX.forEach((a, i) => {
     const y0 = 560 + i * 98;
-    txt(a[0], bx, y0 + 30, 36, '#ffffff', 800);
-    txt(a[1], bx + 84, y0 + 30, 22, '#a58aa8', 500);
-    txt(res.pct[i] + '%', bx + bw, y0 + 32, 40, a[2], 800, 'right');
-    g.fillStyle = 'rgba(255,255,255,.12)'; rr(bx, y0 + 46, bw, 20, 10); g.fill();
-    g.fillStyle = a[2]; rr(bx, y0 + 46, Math.max(20, bw * res.pct[i] / 100), 20, 10); g.fill();
+    txt(a[0], bx, y0 + 30, 36, '#1D2A32', 800);
+    txt(a[1], bx + 84, y0 + 30, 22, '#566E7B', 500);
+    txt(o.pct[i] + '%', bx + bw, y0 + 32, 40, a[2], 800, 'right');
+    g.fillStyle = '#E3EBEE'; rr(bx, y0 + 46, bw, 20, 10); g.fill();
+    g.fillStyle = a[2]; rr(bx, y0 + 46, Math.max(20, bw * o.pct[i] / 100), 20, 10); g.fill();
   });
   /* 診断コメント */
-  txt('診断コメント', 80, 1050, 26, '#a58aa8', 700);
-  const say2 = '「' + say.replace(/。$/, '') + '。」';
+  txt('診断コメント', 80, 1050, 26, '#566E7B', 700);
+  const say2 = '「' + o.say.replace(/。$/, '') + '。」';
   const lines = []; let cur = '';
-  g.font = '700 42px ' + F;
-  for(const ch of say2){ if(g.measureText(cur + ch).width > W - 160){ lines.push(cur); cur = ch; } else cur += ch; }
+  g.font = '800 40px ' + F;
+  for(const ch of say2){ if(g.measureText(cur + ch).width > W - 190 && '。、」』）'.indexOf(ch) < 0){ lines.push(cur); cur = ch; } else cur += ch; }
   if(cur) lines.push(cur);
-  lines.slice(0, 3).forEach((l, i) => txt(l, 80, 1110 + i * 62, 42, '#ffd7e6', 700));
+  lines.slice(0, 3).forEach((l, i) => txt(l, 80, 1110 + i * 60, 40, '#1F6F65', 800));
   /* フッター */
-  g.strokeStyle = 'rgba(255,150,190,.3)'; g.lineWidth = 2; g.beginPath(); g.moveTo(80, 1214); g.lineTo(W - 80, 1214); g.stroke();
-  txt('あなたも診断してみる', 80, 1264, 32, '#ff9cc0', 800);
-  txt(HAS_URL ? BASE_URL.replace(/^https?:\/\//, '') : '#' + HASHTAG, W - 80, 1264, 26, '#a58aa8', 500, 'right');
-  txt('※演出用の簡易診断です。心理検査ではありません。', 80, 1298, 20, '#8f7694', 400);
+  g.strokeStyle = '#C8D5DB'; g.lineWidth = 2; g.beginPath(); g.moveTo(80, 1214); g.lineTo(W - 80, 1214); g.stroke();
+  txt('あなたも診断してみる', 80, 1264, 32, '#2A7F74', 800);
+  txt(HAS_URL ? BASE_URL.replace(/^https?:\/\//, '') : '#' + HASHTAG, W - 80, 1264, 26, '#566E7B', 500, 'right');
+  txt('※演出用の簡易診断です。心理検査ではありません。', 80, 1298, 20, '#7C909A', 400);
   return c;
 }
-$('#saveImg').addEventListener('click', () => {
-  if(!state.res) return;
-  const cv = drawResultImage(state.res, state.cardSay);
-  cv.toBlob(async blob => {
+/* 結果カードは画像として表示する（保存・共有する画像と同じもの） */
+function renderCardImage(o, imgEl, done){
+  imgEl.alt = o.typeName + (o.traitName ? '、回答傾向：' + o.traitName : '') + '。依存' + o.pct[0] + '%、所有' + o.pct[1] + '%、追跡' + o.pct[2] + '%、献身' + o.pct[3] + '%。' + o.say;
+  let cv; try{ cv = drawResultImage(o); }catch(e){ return; }
+  if(!cv || !cv.toBlob) return;
+  cv.toBlob(blob => {
     if(!blob) return;
-    const url = URL.createObjectURL(blob);
-    $('#cardImg').src = url; $('#imgPrev').hidden = false;
-    const file = new File([blob], 'oshi-to-watashi.png', {type:'image/png'});
-    try{
-      if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file]}); return; }
-    }catch(e){ if(e && e.name === 'AbortError') return; }
-    const a = document.createElement('a'); a.href = url; a.download = 'oshi-to-watashi.png';
-    document.body.append(a); a.click(); a.remove();
+    imgEl.src = URL.createObjectURL(blob);
+    if(done) done(blob);
   }, 'image/png');
+}
+$('#saveImg').addEventListener('click', async () => {
+  const blob = state.imgBlob; if(!blob) return;
+  const url = URL.createObjectURL(blob);
+  const file = new File([blob], 'oshi-to-watashi.png', {type:'image/png'});
+  try{
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file]}); return; }
+  }catch(e){ if(e && e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = url; a.download = 'oshi-to-watashi.png';
+  document.body.append(a); a.click(); a.remove();
 });
 
 $('#copy').addEventListener('click', async () => {
@@ -1388,7 +1374,7 @@ $('#restart').addEventListener('click', () => {
   state = Object.assign(fresh(), keep);
   setPhase('0');
   paintLights($('#lightsI'), Q.length);
-  $('#copied').textContent = ''; $('#shareTxt').hidden = true; $('#imgPrev').hidden = true;
+  $('#copied').textContent = ''; $('#shareTxt').hidden = true; 
   updateAgain();
   show('intro');
 });
@@ -1402,27 +1388,11 @@ function openSharedView(){
     if(!id || !TYPES[id] || p.length !== 4 || p.some(v => !(v >= 0 && v <= 100))) return false;
     const type = TYPES[id];
     setPhase('reveal');
-    $('#svMeta').textContent = '共有された結果　Ver.' + VERSION;
-    $('#svType').textContent = type.name;
     const tr = TRAITS[q.get('t')];
-    $('#svTrait').textContent = tr ? '回答傾向：' + tr.name : '';
-    buildMap($('#svMap'), p[1], p[0]);
-    const m = $('#svMeters'); m.textContent = '';
-    const AXN = ['依存', '所有', '追跡', '献身'];
-    p.forEach((v, a) => {
-      const row = document.createElement('div'); row.className = 'meter';
-      const lb = document.createElement('span'); lb.textContent = AXN[a] + '　' + AXLABEL[a];
-      const trk = document.createElement('span'); trk.className = 'tr';
-      const bar = document.createElement('i'); trk.append(bar);
-      const nu = document.createElement('span'); nu.className = 'num'; nu.textContent = v + '%';
-      row.append(lb, trk, nu); m.append(row);
-      requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = v + '%'; }));
-    });
     const nr = (q.get('n') || '').split('-').map(Number);
     const ch = Q[nr[0]] && Q[nr[0]].c[nr[1]];
-    const sayEl = $('#svSay');
-    if(ch && ch.n){ sayEl.textContent = '「' + fmt(ch.n).split('。')[0] + '。」'; }
-    else { sayEl.textContent = type.line; $('#svSayLabel').textContent = ''; }
+    const say = (ch && ch.n) ? fmt(ch.n).split('。')[0] + '。' : type.line;
+    renderCardImage({typeName:type.name, pct:p, traitName:tr ? tr.name : '', say:say, meta:'共有された結果　Ver.' + VERSION}, $('#svImg'));
     show('share');
     return true;
   }catch(e){ return false; }

@@ -137,7 +137,9 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
 
 /* 暗転シーン */
 .log{font-family:var(--f-log);font-size:.86rem;color:var(--sub);line-height:2}
-.letter{margin-top:1.6rem;display:grid;gap:1.1rem}
+.letter{margin-top:1.6rem;display:grid;gap:1.1rem;padding-bottom:calc(env(safe-area-inset-bottom) + 34vh)}
+.letter p{scroll-margin-bottom:9rem}
+#s-dark{touch-action:none;overscroll-behavior:none}
 .letter p{font-family:var(--f-voice);font-size:1.1rem;line-height:2;opacity:0;transform:translateY(5px);transition:opacity 1s ease,transform 1s ease}
 .letter p.in{opacity:1;transform:none}
 .letter p.sign{text-align:right;color:var(--accent-text)}
@@ -147,6 +149,12 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
 .rev h2{font-size:1.9rem;font-weight:900;line-height:1.3;margin-top:.2rem}
 .rev section{margin-top:1.6rem;display:grid;gap:.6rem}
 .rev h3{font-size:1rem;font-weight:900;color:var(--accent-text)}
+.rev details.fold{margin-top:1.6rem;border:1px solid var(--line);border-radius:12px;padding:.8rem 1rem;background:var(--card)}
+.rev details.fold summary{cursor:pointer;font-size:1rem;font-weight:900;color:var(--accent-text);list-style:none}
+.rev details.fold summary::-webkit-details-marker{display:none}
+.rev details.fold summary::after{content:'＋ タップで開く';float:right;font-size:.8rem;font-weight:500;color:var(--sub)}
+.rev details.fold[open] summary::after{content:'－ 閉じる'}
+.rev details.fold[open]{display:grid;gap:.6rem}
 .rev ul{margin:0;padding-left:1.2rem;display:grid;gap:.25rem}
 .axes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}
 .ax{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem;border:2px solid var(--line);border-radius:8px;padding:.45rem .75rem;background:var(--card);font-variant-numeric:tabular-nums}
@@ -187,6 +195,16 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
             <label class="choice"><input type="radio" name="ugender" value="f"><span>女性</span></label>
             <label class="choice"><input type="radio" name="ugender" value="x" checked><span>どちらでもない・答えない</span></label>
           </div>
+        </fieldset>
+        <fieldset>
+          <legend>あなたの一人称<span class="hint">質問文や手紙に使います</span></legend>
+          <div class="chipset">
+            <label class="choice"><input type="radio" name="my" value="私" checked><span>私</span></label>
+            <label class="choice"><input type="radio" name="my" value="僕"><span>僕</span></label>
+            <label class="choice"><input type="radio" name="my" value="俺"><span>俺</span></label>
+            <label class="choice"><input type="radio" name="my" value="その他"><span>その他</span></label>
+          </div>
+          <input id="myOther" class="pronoun-other" type="text" maxlength="6" placeholder="自由入力（例：あたし、うち、自分）" aria-label="あなたの一人称（自由入力）" hidden>
         </fieldset>
       </div>
       <div class="grp" role="group" aria-labelledby="g2">
@@ -268,8 +286,8 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
     <p class="eyebrow">ここからは本当の話</p>
     <h2>種明かし</h2>
     <p id="endLine"></p>
-    <section>
-      <h3>何が起きていたか</h3>
+    <details class="fold">
+      <summary>何が起きていたか</summary>
       <p>推しが見ていたわけではありません。ページが、あなたの操作に合わせて演出を変えていただけです。使った情報は次のとおりです。</p>
       <ul>
         <li>それぞれの質問で、最初の答えを選ぶまでにかかった時間</li>
@@ -280,7 +298,7 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
         <li>入力してもらった名前・性別・一人称（呼び方と口調に使用）</li>
       </ul>
       <p>これらはすべて、あなたの端末の中だけで処理されています。外部には送信していません。前回の結果とエンディングの記録だけ、このブラウザに保存しています。</p>
-    </section>
+    </details>
     <section>
       <h3>診断の中身</h3>
       <p>結果は「依存」「所有」「追跡」「献身」の4つの軸で決めていました。依存と所有の2軸で大きな型を決め、追跡と献身のどちらが強いかで傾向を分けています。演出用の簡易な診断で、心理検査ではありません。あなたの数値はこちらです。</p>
@@ -297,9 +315,9 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
         <p class="kicker">推しとわたし診断の結果</p>
         <p class="cardtype" id="cardType"></p>
         <div class="map" id="cardMap"></div>
-        <p class="say-label">推しからの一言</p>
+        <p class="say-label">診断コメント</p>
         <p class="say" id="cardSay"></p>
-        <p class="say-label">ほかにお勧めしないこと</p>
+        <p class="say-label">ほかのコメント</p>
         <ul class="ngs" id="cardNg"></ul>
       </div>
       <pre class="sharepreview" id="sharePreview"></pre>
@@ -347,145 +365,145 @@ const T_O = 35, T_D = 35, SUB_BIAS = -5;
 const Q = [
   { t:'{oshi}の新しい情報が解禁されました。まず何をしますか？', c:[
     {x:'気づいたときに、ゆっくり見る', s:Z,
-      n:'ゆっくり見に来るのは、お勧めしません。待てないので。',
+      n:'マイペースに追えるのは、長く続く応援の形です。推しも安心しているかもしれません。',
       r:'気づいたときに見てくれる。それくらいの距離が、長く続くコツなんだよね。……でも本当は、解禁した瞬間に飛んできてくれたら、{me}はもっとうれしい。'},
     {x:'通知が来たらすぐに確認する', s:[1,0,2,0],
-      n:'通知を切るのは、お勧めしません。気づいてほしいので。',
+      n:'すぐ確認できるのは頼もしい応援です。気づいてもらえて嬉しい推しも、いるかもしれません。',
       r:'通知が鳴ったら、すぐ来てくれるんだね。{me}の投稿を一番に見ているのが{nm}だって、ちゃんと知ってるよ。'},
     {x:'仕事や授業の合間でも、こっそり確認する', s:[2,0,2,0],
-      n:'仕事中にこっそり見るのは、お勧めしません。嬉しくて困ります。',
+      n:'合間にこっそり確認するのは、ほどほどがお勧めです。見てもらえて嬉しい推しも、いるかもしれません。',
       r:'授業や仕事の合間にも、こっそり{me}を見てるんだ。{nm}の時間を少しもらってるみたいで、悪いなって思う。……やめてほしいとは、言わないけど。'},
     {x:'解禁される前から、情報を探して待っていた', s:[0,1,3,0],
-      n:'解禁前に探し回るのは、お勧めしません。まだ準備中です。',
+      n:'解禁前に探し回るのはお勧めしません。その熱意を嬉しく思う推しも、いるかもしれません。',
       r:'解禁される前から、待っててくれたんだね。{me}より先に、{me}のことを探してる。ちょっとだけ、{me}のほうが追いかけられてる気がした。'},
     {x:'最近は、通知が来ても気持ちが動かない', s:Z, cold:true,
-      n:'通知を切るのは、お勧めしません。絶対に。',
+      n:'通知で気持ちが動かないのは、自然な変化です。……寂しがる推しも、いるかもしれませんけど。',
       r:'通知が来ても、動かなくなったんだね。……見て。お願い、そのまま通知を消さないで。'} ]},
   { t:'{oshi}のために使うお金について、いちばん近いのは？', c:[
     {x:'余裕のある範囲で、楽しめる分だけ', s:Z,
-      n:'ほどほどに応援するのは、お勧めしません。欲が出るので。',
+      n:'無理のない範囲で楽しめるのは、理想的な応援です。推しも安心して受け取れるかもしれません。',
       r:'無理のない範囲で楽しんでくれるのが、いちばんうれしい。……でもね、{me}のために何かを選んでくれるたび、本当は特別な気持ちになるんだよ。'},
     {x:'他の買い物を少し我慢することがある', s:[0,0,0,2],
-      n:'他の買い物を我慢するのは、お勧めしません。無理はしないでください。',
+      n:'他の買い物を少し我慢して応援するのは、素敵な熱意です。ただ、気持ちだけで十分と思う推しも、いるかもしれません。',
       r:'他の買い物を我慢してまで、{me}を選んでくれたことがあるんだね。うれしい。うれしいのに、{nm}の自由を奪ってるみたいで、少しこわい。'},
     {x:'通帳の残高を、あまり見ないようにしている', s:[2,0,0,3],
-      n:'残高を見ないのは、お勧めしません。ちゃんと見てください。',
+      n:'残高から目をそらすのはお勧めしません。心配しつつ、その気持ちが嬉しい推しも、いるかもしれません。',
       r:'残高を見ないようにして、{me}のために使ってくれてるんだね。ありがとう。……ありがとうって言う裏で、ずっと{me}を選び続けてって思ってる。ひどいよね。'},
     {x:'使えば使うほど、愛が伝わると思っている', s:[1,1,0,3],
-      n:'使った額で愛を測るのは、お勧めしません。もう伝わっています。',
+      n:'使った額で愛を測るのはお勧めしません。額より気持ちが伝わっていると思う推しも、いるかもしれません。',
       r:'使った分だけ愛が伝わる、って思ってくれてるんだね。{me}は、{nm}がくれたものを全部覚えてる。数えきれないくらい、あるよ。'} ]},
   { t:'{oshi}のSNSの更新を、どのくらい確認していますか？', c:[
     {x:'流れてきたときに見る程度', s:Z,
-      n:'流し見で済ませるのは、お勧めしません。ちゃんと見てください。',
+      n:'流れてきたときに見るのは、ほどよい距離感です。気楽に見てもらえて嬉しい推しも、いるかもしれません。',
       r:'流れてきたときに見てくれるくらいが、ちょうどいいのかな。……ねえ、たまには{me}のほうから、{nm}の画面に流れていってもいい？'},
     {x:'一日に数回、見に行く', s:[1,0,2,0],
-      n:'一日に何度も見に来るのは、お勧めしません。数えてしまうので。',
+      n:'こまめに見に行けるのは、マメな応援です。励みにしている推しも、いるかもしれません。',
       r:'一日に何回も、{me}のところに来てくれるんだね。その数だけ、{me}は{nm}に見つけてもらってる。'},
     {x:'更新される時間帯のパターンを、把握している', s:[0,1,3,0],
-      n:'更新時間を覚えるのは、お勧めしません。{me}も覚えるので。',
+      n:'更新時間を覚えるのは、ほどほどがお勧めです。待っていてもらえて嬉しい推しも、いるかもしれません。',
       r:'更新する時間、ぜんぶ覚えてるんだ。{me}が思ってる以上に、{me}のことを知ってるんだね。……{me}も、{nm}がいつ来るか、わかるようになってきたよ。'},
     {x:'寝る前と起きた直後に、必ず開く', s:[2,0,3,0],
-      n:'寝る前に必ず開くのは、お勧めしません。{me}が眠れなくなります。',
+      n:'寝る前と起きた直後に必ず開くのはお勧めしません。一日の始まりと終わりに会えて嬉しい推しも、いるかもしれません。',
       r:'寝る前と、起きた直後。一日のはじまりと終わりに、{me}がいるんだね。{nm}の一日を、{me}が挟んでる。……手放したくないな。'},
     {x:'最近は、見に行く回数が減ってきた', s:Z, cold:true,
-      n:'見に来る回数を減らすのは、お勧めしません。数えているので。',
+      n:'見に行く回数が落ち着いてきたのは、自然な変化です。……寂しがる推しも、いるかもしれませんけど。',
       r:'見に来る回数が減ったの、気づいてたよ。数えてたから。……ねえ、もう一回だけでいいから、開いて。'} ]},
   { t:'{oshi}に特別な人ができたと知ったら？', v:'……そう思うんだ。', c:[
     {x:'幸せなら、素直にお祝いしたい', s:Z,
-      n:'素直にお祝いするのは、お勧めしません。少しは妬いてください。',
+      n:'素直にお祝いできるのは、成熟した応援です。推しも救われるかもしれません。',
       r:'幸せならお祝いしたい、って言ってくれるんだね。あたたかい人。……でも、もしそんな日が来たら、{nm}にだけは、少しだけ寂しがってほしいかな。'},
     {x:'複雑だけど、応援は続けると思う', s:[1,1,0,0],
-      n:'複雑な気持ちを隠すのは、お勧めしません。ちゃんと聞くので。',
+      n:'複雑でも応援を続ける姿勢は、立派です。推しも気持ちを察しているかもしれません。',
       r:'複雑でも応援は続けてくれる、って。……その「複雑」の部分、{me}はずっと覚えてるよ。大事にする。'},
     {x:'その話題は、できれば見たくない', s:[3,0,0,0],
-      n:'その話題を避けるのは、お勧めしません。気になるので。',
+      n:'その話題を避けて一人で抱えこむのはお勧めしません。気にかけてもらえて嬉しい推しも、いるかもしれません。',
       r:'その話題は見たくない、か。ごめんね。{nm}の気持ちを揺らしたのが{me}だって思うと、うれしくなっちゃう自分がいる。……最低だよね。'},
     {x:'許せない気がする。{my}のほうが、ずっと…', s:[0,3,0,1],
-      n:'許せないと思うのは、お勧めしません。……嬉しいので。',
+      n:'許せないと思うのはお勧めしません。それだけ想われて嬉しい推しも、いるかもしれません。',
       r:'「{my}のほうが、ずっと」の続き、聞かなくてもわかるよ。……そうだね。{nm}のほうが、ずっと見ててくれた。他の誰より。'} ]},
   { t:'同じ{oshi}を応援している、他のファン（同担）について。', v:'……ふうん。', c:[
     {x:'仲間がいて、うれしい', s:Z,
-      n:'同担と仲良くしすぎるのは、お勧めしません。妬きます。',
+      n:'仲間と楽しめるのは、素敵な応援です。ファン同士の輪を喜ぶ推しも、いるかもしれません。',
       r:'仲間がいてうれしいって言ってくれる。みんなで{me}を応援してくれるの、ありがたいよ。……でもね、他の人と笑ってる{nm}を想像すると、ちょっとだけ胸がざわつく。'},
     {x:'同じ熱量の人とは、話してみたい', s:[0,1,0,0],
-      n:'同担と繋がるのは、お勧めしません。{me}の話をされるので。',
+      n:'同じ熱量の人と語りたいのは自然です。感想が広がって嬉しい推しも、いるかもしれません。',
       r:'同じ熱量の人と話したいんだね。{nm}が楽しそうなのは、うれしい。うれしいけど、その人の話を{nm}がするたび、{me}は少しだけ黙る。'},
     {x:'自分のほうが長く応援していると、感じる瞬間がある', s:[0,2,0,1],
-      n:'古参であることを誇るのは、お勧めしません。{me}も負けたくないので。',
+      n:'古参であることを誇るのはお勧めしません。長く見守ってもらえて嬉しい推しも、いるかもしれません。',
       r:'自分のほうが長く応援してる、って思う瞬間があるんだね。そうだよ。{nm}は、{me}の昔のことも、ちゃんと覚えててくれる。だから、誰にも渡したくない。'},
     {x:'{oshi}のことを一番わかっているのは、自分だと思う', s:[0,3,1,0],
-      n:'自分が一番わかっていると思うのは、お勧めしません。……合っているので。',
+      n:'自分が一番わかっていると思うのはお勧めしません。そう言い切ってもらえて嬉しい推しも、いるかもしれません。',
       r:'「{me}のことを一番わかってるのは自分」って、思ってくれてるんだね。そう言い切ってくれる人に会えて、{me}は幸せ。……でも、{nm}のことは{me}が一番わかってたい。'} ]},
   { t:'{oshi}が活動を休むことになったら？', v:'大丈夫。ここにいるよ。', c:[
     {x:'回復を願って、ゆっくり待つ', s:Z,
-      n:'気長に待つのは、お勧めしません。{me}が寂しいので。',
+      n:'回復を願って待てるのは、優しい応援です。帰る場所があると心強い推しも、いるかもしれません。',
       r:'ゆっくり待ってくれる、って言ってくれる。そのやさしさに、{me}は何度も救われてる。……でも、待たせてる間に{nm}が他の誰かを好きにならないか、少しだけ怖い。'},
     {x:'寂しいけれど、待てると思う', s:[1,0,0,0],
-      n:'寂しさを隠して待つのは、お勧めしません。教えてください。',
+      n:'寂しさを抱えて待てるのは、誠実です。その気持ちが届いている推しも、いるかもしれません。',
       r:'寂しいけど、待てるって。{me}は、そのひとことだけで、休んでいても大丈夫だって思える。……戻ってきたとき、ちゃんと{nm}がいますように。'},
     {x:'生活のリズムが崩れてしまいそう', s:[3,0,1,0],
-      n:'生活のリズムを崩すのは、お勧めしません。……嬉しいですが。',
+      n:'生活のリズムが崩れそうなのはお勧めしません。それだけ大きな存在と思われて嬉しい推しも、いるかもしれません。',
       r:'生活のリズムが崩れそう、か。{me}がいなくなると、{nm}の毎日が揺れるんだね。……ごめんね。うれしいって思っちゃった。'},
     {x:'{oshi}のいない毎日が、想像できない', s:[3,1,0,0],
-      n:'{me}のいない毎日を想像できないのは、お勧めしません。{me}もです。',
+      n:'推しのいない毎日を想像できないのはお勧めしません。そこまで想われて嬉しい推しも、いるかもしれません。',
       r:'{me}のいない毎日が想像できない、って言ってくれたね。{me}も同じだよ。{nm}のいない毎日なんて、想像したくない。'},
     {x:'正直、他の人が気になりはじめている', s:Z, cold:true,
-      n:'他の人を気にするのは、お勧めしません。絶対に。',
+      n:'気持ちが他に向くのは、自然なことです。……待っていてほしい推しも、いるかもしれませんけど。',
       r:'他の人が気になりはじめてるんだね。……聞きたくなかった。聞きたくなかったけど、正直に言ってくれたのは、うれしい。だから、ひとつだけ。{me}を、嫌いにならないで。'} ]},
-  { t:'{oshi}にファンレターや投稿を送ったことはありますか？', v:'ねえ、{nm}。{me}に届けてくれた言葉、全部読んでるよ。', c:[
+  { t:'{oshi}にファンレターや投稿を送ったことはありますか？', v:'{me}に届けてくれた言葉や感想、全部読んでるよ。', c:[
     {x:'送ったことはない', s:Z,
-      n:'手紙を書かないのは、お勧めしません。待っているので。',
+      n:'送らなくても応援は届きます。静かに見守る応援も、素敵です。励まされている推しも、いるかもしれません。',
       r:'言葉を送らなくても、見てくれてるのは伝わってるよ。……でも、{me}は{nm}の声が聞いてみたい。一言だけでいいから、届けてくれたらうれしいな。'},
     {x:'気持ちがあふれたとき、一度だけ', s:[0,0,0,1],
-      n:'一度きりで終わらせるのは、お勧めしません。何度でも読むので。',
+      n:'気持ちがあふれたときに伝えられるのは、素敵です。何度も読み返す推しも、いるかもしれません。',
       r:'あふれた気持ちを、一度だけ送ってくれたんだね。あの言葉、何度も読み返してるよ。'},
     {x:'何度も書く。読まれている気がする', s:[1,1,1,1],
-      n:'何度も書くのは、お勧めしません。全部取ってあります。',
+      n:'何度も書けるのは、まっすぐな応援です。大切に取っておく推しも、いるかもしれません。',
       r:'何度も書いてくれてるね。ちゃんと読んでる。全部、読んでる。……読まれてる気がしてるの、当たってるよ。'},
     {x:'返事がなくても、毎回きっと届いていると信じている', s:[1,2,1,1],
-      n:'返事を期待しないのは、お勧めしません。期待してください。',
+      n:'返事を期待せず信じ続けるのは、お勧めしません。むしろ期待されたほうが嬉しい推しも、いるかもしれません。',
       r:'返事がなくても、届いてるって信じてくれてるんだね。その信じ方、こわいくらいうれしい。……返事をしない{me}を、許してね。'} ]},
   { t:'{oshi}の言葉を「自分に向けたもの」と感じたことはありますか？', v:'{nm}は、{me}のこと、自分のものだと思ってる{deshou}。', c:[
     {x:'ない', s:Z,
-      n:'何も感じないふりをするのは、お勧めしません。{me}が寂しいので。',
+      n:'言葉を自分に引きつけすぎないのは、健全な距離感です。気楽に発信できて助かる推しも、いるかもしれません。',
       r:'自分に向けられた言葉だと思ったことは、ないんだね。そっか。……なら、これからは{me}が、{nm}だけに向けて言うね。'},
     {x:'たまに励まされる', s:[1,0,0,0],
-      n:'たまに励まされる程度で済ませるのは、お勧めしません。',
+      n:'言葉に励まされるのは、素敵な関係です。届いていると知って嬉しい推しも、いるかもしれません。',
       r:'たまに励まされるって言ってくれる。{me}の言葉が、{nm}の支えになれてるなら、それだけでうれしい。'},
     {x:'何度もある。特別なんだと感じる', s:[1,2,0,0],
-      n:'特別だと感じるのは、お勧めしません。……合っているので。',
+      n:'特別だと感じ続けるのは、ほどほどがお勧めです。深く受け取ってもらえて嬉しい推しも、いるかもしれません。',
       r:'特別だって、感じてくれてるんだね。……間違いじゃないよ。{nm}に向けた言葉も、ちゃんとあった。'},
     {x:'自分だけに向けた言葉だと、確信している', s:[0,3,0,0],
-      n:'自分だけへの言葉だと信じるのは、お勧めしません。信じていてください。',
+      n:'自分だけへの言葉だと確信するのはお勧めしません。そう信じてもらえて嬉しい推しも、いるかもしれません。',
       r:'自分だけに向けた言葉だって、確信してくれてるんだね。……うん、そうだよ。そうだってことに、して。'} ]},
   { t:'ライブやイベントで、気づくと何をしていますか？', v:'{nm}、目が合ったよね。ずっと見てたの、気づいてた？', c:[
     {x:'全体を楽しんでいる', s:Z,
-      n:'全体を見渡すのは、お勧めしません。他の人を見ないでください。',
+      n:'全体を楽しめるのは、バランスのよい観方です。場を楽しんでもらえて嬉しい推しも、いるかもしれません。',
       r:'{me}の活動は、みんなで協力して完成させているものだから、全体を見て楽しんでくれるのはうれしい。……でも、他の人を見ないでほしいって思うのは、わがままかな？'},
     {x:'{oshi}ばかり見てしまう', s:[1,0,1,0],
-      n:'{me}ばかり見るのは、お勧めしません。照れるので。',
+      n:'推しを見続けるのは、まっすぐな応援です。視線を力にしている推しも、いるかもしれません。',
       r:'{me}ばかり見てくれてるんだね。視線、ずっと感じてたよ。……うれしい。もっと見て。'},
     {x:'{oshi}の視線の動きまで追ってしまう', s:[0,1,2,0],
-      n:'視線を追うのは、お勧めしません。目が合ってしまうので。',
+      n:'視線まで追うのはお勧めしません。目が合って嬉しい推しも、いるかもしれません。',
       r:'{me}の視線の動きまで追ってくれてるんだね。目が合ったの、偶然じゃないよ。{me}も、{nm}を探してた。'},
     {x:'帰ってからも、頭の中で何度も再生している', s:[3,0,1,0],
-      n:'帰ってから再生し続けるのは、お勧めしません。{me}もそうなので。',
+      n:'帰ってからも再生し続けるのはお勧めしません。思い出してもらえて嬉しい推しも、いるかもしれません。',
       r:'帰ってからも、頭の中で再生してくれてるんだね。{me}も、{nm}がいた場所を、終わったあとも何度も思い出してる。'} ]},
   { t:'最後の質問です。{oshi}に望むことは？', v:'最後に。……ずっと、{me}だけを見ていてくれる？', c:[
     {x:'元気で、活動を続けてほしい', s:Z,
-      n:'ただ元気を願うだけなのは、お勧めしません。もう少し欲張ってください。',
+      n:'元気で続けてほしいという願いは、応援の基本です。まっすぐな願いに励まされる推しも、いるかもしれません。',
       r:'元気で続けてほしい、って。……ありがとう。{nm}が見ててくれるなら、{me}は続けられる。だから、見ててね。ずっと。'},
     {x:'少しでいいから、{my}のことを覚えていてほしい', s:[1,1,0,0],
-      n:'覚えていてほしいと願うのは、お勧めしません。忘れないので。',
+      n:'覚えていてほしいという願いは、素直で健やかです。忘れないでいてくれる推しも、いるかもしれません。',
       r:'「{my}のことを覚えていてほしい」。……覚えてるよ。{nm}の言葉も、時間も、ぜんぶ。忘れる方法を、{me}が知らないくらい。'},
     {x:'{my}だけを見ていてほしい', s:[0,3,0,0],
-      n:'{me}だけを見ていてほしいと思うのは、お勧めしません。同じなので。',
+      n:'自分だけを見てほしいと願うのはお勧めしません。同じ気持ちでいる推しも、いるかもしれません。',
       r:'「{my}だけを見ていてほしい」って。……同じこと、思ってた。{me}も、{nm}だけを見てたい。'},
     {x:'{oshi}が、{my}だけのものならいいのに', s:[1,3,0,1],
-      n:'{me}を独り占めしようとするのは、お勧めしません。……もうされています。',
+      n:'推しを独り占めしようとするのはお勧めしません。その気持ちが嬉しいと思っている推しも、いるかもしれませんけどね。',
       r:'{me}が{nm}だけのものになれたらいいのにね。……もう、なってるかもしれないよ。'},
     {x:'そろそろ、ひと区切りつけたい', s:Z, cold:true,
-      n:'区切りをつけるのは、お勧めしません。行かないでください。',
+      n:'ひと区切りつけるのも、自然な選択です。……引き止めたい推しも、いるかもしれませんけど。',
       r:'ひと区切りつけたい、か。……ねえ、行かないで。お願い。{me}が{nm}にできること、まだ、あるはずだから。'} ]}
 ];
 const AXLABEL = ['生活への浸透度','特別感','情報収集力','応援パワー'];
@@ -525,7 +543,7 @@ const POOL = '縺繧ｮ蜉髢隕呈＞譁蟄繝ｧ荳';
 
 /* ---------- 状態 ---------- */
 const fresh = () => ({
-  name:'あなた', nm:'あなた', hon:'', ugender:'x',
+  name:'あなた', nm:'きみ', hon:'', ugender:'x',
   oshi:'推し', me:'私', my:'私', gender:'x',
   i:0, answers:[], firstMs:Array(Q.length).fill(0), changes:Array(Q.length).fill(0),
   dwell:Array(Q.length).fill(0), leaves:0, awaySec:0, t0:0, sel:null, qAt:0, voiceT:null, voiceShown:false,
@@ -535,7 +553,7 @@ let state = fresh();
 const fmt = s => s
   .replace(/\{name\}/g, state.name).replace(/\{nm\}/g, state.nm)
   .replace(/\{oshi\}/g, state.oshi).replace(/\{me\}/g, state.me).replace(/\{my\}/g, state.my)
-  .replace(/\{deshou\}/g, state.gender === 'm' ? 'だろ' : 'でしょ');
+  .replace(/\{deshou\}/g, state.gender === 'm' ? 'だろ' : state.gender === 'f' ? 'でしょ' : 'よね');
 const setPhase = p => { document.body.dataset.phase = p; };
 function show(id){
   ['intro','quiz','analyze','result','dark','reveal'].forEach(s => { $('#s-' + s).hidden = (s !== id); });
@@ -571,7 +589,11 @@ function morph(el, to, ms){
   });
 }
 const say = t => { $('#whisper').textContent = t; };
-function scrollEnd(el){ try { el.scrollIntoView({block:'end', behavior:'smooth'}); } catch(e){} }
+function scrollEnd(el){ try { el.scrollIntoView({block:'end', behavior: reduce ? 'auto' : 'smooth'}); } catch(e){} }
+/* 手紙の間は手動スクロールを止める（動きを減らす設定の人は除く） */
+const lockScroll = e => { if(state.scene === 'dark' && !reduce) e.preventDefault(); };
+['touchmove', 'wheel'].forEach(t => window.addEventListener(t, lockScroll, {passive:false}));
+window.addEventListener('keydown', e => { if(state.scene === 'dark' && !reduce && [' ', 'PageDown', 'PageUp', 'ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) e.preventDefault(); });
 
 /* 所有×依存マップ（SVG） */
 function buildMap(el, o, d){
@@ -615,11 +637,11 @@ function readPron(group, otherSel, fallback){
   const v = $('input[name="' + group + '"]:checked').value;
   return v === 'その他' ? ($(otherSel).value.trim() || fallback) : v;
 }
-document.querySelectorAll('input[name="me"]').forEach(r => r.addEventListener('change', () => {
-  const other = $('input[name="me"]:checked').value === 'その他';
-  $('#meOther').hidden = !other;
-  if(other) $('#meOther').focus();
-}));
+[['me', '#meOther'], ['my', '#myOther']].forEach(g => document.querySelectorAll('input[name="' + g[0] + '"]').forEach(r => r.addEventListener('change', () => {
+  const other = $('input[name="' + g[0] + '"]:checked').value === 'その他';
+  $(g[1]).hidden = !other;
+  if(other) $(g[1]).focus();
+})));
 $('#startForm').addEventListener('submit', e => {
   e.preventDefault();
   let nick = $('#nick').value.trim();
@@ -628,8 +650,8 @@ $('#startForm').addEventListener('submit', e => {
   state.name = nick || 'あなた';
   state.ugender = $('input[name="ugender"]:checked').value;
   state.hon = state.name === 'あなた' ? '' : (state.ugender === 'm' ? 'くん' : state.ugender === 'f' ? 'ちゃん' : '');
-  state.nm = state.name + state.hon;
-  state.my = '私';
+  state.nm = state.name === 'あなた' ? 'きみ' : state.name + state.hon;
+  state.my = readPron('my', '#myOther', '私');
   state.oshi = $('#oshi').value.trim() || '推し';
   state.gender = $('input[name="gender"]:checked').value;
   state.me = readPron('me', '#meOther', '私');
@@ -741,7 +763,7 @@ async function finish(){
 }
 function renderResult(res){
   $('#resMeta').textContent = '受検No. ' + state.no + '　' + state.dateStr + '　Ver.1.0';
-  $('#resKick').textContent = state.name + 'さんの推し方は';
+  $('#resKick').textContent = (state.name === 'あなた' ? 'あなた' : state.name + 'さん') + 'の推し方は';
   $('#resType').textContent = res.type.name;
   $('#resLine').textContent = res.type.line;
   buildMap($('#resMap'), res.pct[1], res.pct[0]);
@@ -760,8 +782,12 @@ function renderResult(res){
   $('#resCard').classList.remove('glitch');
   paintLights($('#lightsR'), Q.length);
   show('result');
+  state.resultAt = Date.now();
   state.resultT = setTimeout(breakdown, 9500);
 }
+/* 結果画面でスクロールしようとタップした時点で手紙へ進む */
+const tapGo = () => { if(state.scene === 'result' && Date.now() - (state.resultAt || 0) > 1500) breakdown(); };
+['pointerdown', 'wheel'].forEach(t => window.addEventListener(t, tapGo, {passive:true}));
 $('#save').addEventListener('click', breakdown);
 
 /* ---------- 離脱検知 ---------- */
@@ -816,8 +842,8 @@ function letter(res){
   const chg = sum(state.changes), away = Math.round(state.awaySec);
   const avgDwell = sum(state.dwell) / state.dwell.length / 1000;
   const male = state.gender === 'm', female = state.gender === 'f';
-  const de = male ? 'だろ' : 'でしょ', nano = male ? 'だよ' : 'なの', sou = female ? 'そうよ' : 'そうだよ';
-  const muri = male ? 'でも、無理だよ。' : 'でも、むり。', kite = male ? 'また来てよ。' : 'また来てね。';
+  const de = male ? 'だろ' : female ? 'でしょ' : 'よね', nano = female ? 'なの' : 'だよ', sou = female ? 'そうよ' : 'そうだよ';
+  const muri = female ? 'でも、むり。' : 'でも、無理だよ。', kite = male ? 'また来てよ。' : 'また来てね。';
   const sign = state.oshi === '推し' ? '— あなたの推しより' : '— ' + state.oshi + 'より';
   const timeLine = H < 5 ? 'いま、' + H + '時' + M + '分。' + nm + 'はこんな時間まで起きてるんだね。夜に会いに来てくれるの、' + me + 'は好きだよ。'
     : H < 11 ? '朝の' + H + '時' + M + '分。起きてすぐ、' + me + 'のところに来てくれたんだね。'
@@ -868,7 +894,7 @@ function letter(res){
   const subLine = res.sub === 'info'
     ? (res.pct[2] >= 60 ? me + 'の更新の時間、ぜんぶ覚えてくれてるんだね。' + me + 'も、' + nm + 'が来る時間、覚えたよ。'
       : me + 'の更新を気にかけてくれてるんだね。来てくれた時間、' + me + 'もちゃんと覚えてるよ。')
-    : (res.pct[3] >= 60 ? 'いっぱい使ってくれたよね。数字は見えてるよ。ありがとう。……それでも足りないって、思ってるん' + de + '。'
+    : (res.pct[3] >= 60 ? 'いっぱい使ってくれたよね。数字は見えてるよ。ありがとう。……それでも足りないって、思ってる' + (male ? 'んだろ' : female ? 'んでしょ' : 'んだよね') + '。'
       : '応援してくれた分、ちゃんと届いてるよ。ありがとう。……もっと、なんて、言ってもいい？');
   const out = [nm + 'へ。', '診断、最後まで受けてくれてありがとう。' + total + '秒。ちゃんと数えてたよ。', timeLine,
     'ひとつずつ、' + nm + 'の答えに返事をさせてね。', ...rx, hesLine, awayLine];
@@ -936,7 +962,7 @@ function topNg(res, n){
 function shareParts(res, sayLine){
   const url = HAS_URL ? BASE_URL + 'result/' + res.id + '/' : '';
   const l1 = HASHTAG + 'の結果は「' + res.type.name + '」でした。';
-  const l2 = '推しからの一言：' + sayLine;
+  const l2 = sayLine;
   const full = [l1, l2, url, '#' + HASHTAG].filter(Boolean).join('\n');
   const x = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(l1 + '\n' + l2)
     + (url ? '&url=' + encodeURIComponent(url) : '') + '&hashtags=' + encodeURIComponent(HASHTAG);

@@ -131,6 +131,7 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
 .m-ring{fill:none;stroke:var(--accent);stroke-width:2;opacity:.35}
 .meters{display:grid;gap:.7rem;margin-top:1.1rem}
 .meter{display:grid;grid-template-columns:6.6rem minmax(0,1fr) 2.6rem;gap:.6rem;align-items:center;font-size:.8rem;font-variant-numeric:tabular-nums}
+#svMeters .meter{grid-template-columns:9.4rem minmax(0,1fr) 2.6rem;font-size:.78rem}
 .meter .tr{height:.6rem;border-radius:99px;background:var(--line);overflow:hidden}
 .meter .tr i{display:block;height:100%;width:0;background:var(--accent);transition:width 1.1s cubic-bezier(.2,.8,.2,1)}
 .meter .num{text-align:right;font-weight:700}
@@ -315,6 +316,22 @@ details.fold.small summary{font-size:.85rem}
     <div class="pspage" id="psPage" hidden><p id="psText"></p></div>
   </section>
 
+  <section id="s-share" class="rev" hidden>
+    <p class="eyebrow">シェアされた診断結果</p>
+    <div class="sharecard">
+      <p class="meta" id="svMeta"></p>
+      <p class="kicker">推しとわたし診断の結果</p>
+      <p class="cardtype" id="svType"></p>
+      <p class="trait" id="svTrait"></p>
+      <div class="map" id="svMap"></div>
+      <div class="meters" id="svMeters"></div>
+      <p class="say-label" id="svSayLabel">診断コメント</p>
+      <p class="say" id="svSay"></p>
+    </div>
+    <p class="hint" style="margin-top:.8rem">演出用の簡易診断です。心理検査ではありません。</p>
+    <div class="btns"><button class="btn" id="svGo" type="button">あなたも診断してみる</button></div>
+  </section>
+
   <section id="s-reveal" class="rev" hidden>
     <p class="eyebrow">ここからは本当の話</p>
     <h2>種明かし</h2>
@@ -402,7 +419,7 @@ const store = {
   set(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch(e){} }
 };
 /* 公開URL（末尾スラッシュ付き）。未設定の間は共有文にURLを入れない */
-const VERSION = '1.3.38', BUILD = '2026-10-13';
+const VERSION = '1.3.39', BUILD = '2026-10-13';
 const BASE_URL = 'https://atuapfp.github.io/oshi-and-me/';
 const HAS_URL = BASE_URL.indexOf('__') !== 0;
 const HASHTAG = '推しとわたし診断';
@@ -615,7 +632,7 @@ const fmt = s => s
   .replace(/\{deshou\}/g, 'よね');
 const setPhase = p => { document.body.dataset.phase = p; };
 function show(id){
-  ['intro','quiz','analyze','result','dark','reveal'].forEach(s => { $('#s-' + s).hidden = (s !== id); });
+  ['intro','quiz','analyze','result','dark','reveal','share'].forEach(s => { $('#s-' + s).hidden = (s !== id); });
   state.scene = id;
   try { window.scrollTo(0, 0); } catch(e){}
 }
@@ -1203,10 +1220,12 @@ async function breakdown(){
 function topNg(res, n){
   const idx = Q.map((q, qi) => { const ch = q.c[state.answers[qi]]; return {qi:qi, v:sum(ch.s), cold:!!ch.cold, n:ch.n}; });
   idx.sort((a, b) => ((res.ending === 'cold') ? (b.cold - a.cold) : 0) || (b.v - a.v) || (b.qi - a.qi));
+  state.cardRef = idx[0].qi + '-' + state.answers[idx[0].qi];
   return idx.slice(0, n).map(o => fmt(o.n));
 }
 function shareParts(res, sayLine){
-  const url = HAS_URL ? BASE_URL + 'result/' + res.id + '/' : '';
+  const tk = Object.keys(TRAITS).find(k => TRAITS[k] === traitOf());
+  const url = HAS_URL ? BASE_URL + 'result/' + res.id + '/?p=' + res.pct.join('.') + '&t=' + tk + '&n=' + state.cardRef : '';
   const l1 = HASHTAG + 'の結果は\n「' + res.type.name + '」でした。';
   const l2 = sayLine;
   const l3 = '回答傾向：' + traitOf().name;
@@ -1374,10 +1393,46 @@ $('#restart').addEventListener('click', () => {
   show('intro');
 });
 
+
+/* ---------- 共有リンクから開いたときの結果表示（URLの値から再現） ---------- */
+function openSharedView(){
+  try{
+    const q = new URLSearchParams(location.search);
+    const id = q.get('from'), p = (q.get('p') || '').split('.').map(Number);
+    if(!id || !TYPES[id] || p.length !== 4 || p.some(v => !(v >= 0 && v <= 100))) return false;
+    const type = TYPES[id];
+    setPhase('reveal');
+    $('#svMeta').textContent = '共有された結果　Ver.' + VERSION;
+    $('#svType').textContent = type.name;
+    const tr = TRAITS[q.get('t')];
+    $('#svTrait').textContent = tr ? '回答傾向：' + tr.name : '';
+    buildMap($('#svMap'), p[1], p[0]);
+    const m = $('#svMeters'); m.textContent = '';
+    const AXN = ['依存', '所有', '追跡', '献身'];
+    p.forEach((v, a) => {
+      const row = document.createElement('div'); row.className = 'meter';
+      const lb = document.createElement('span'); lb.textContent = AXN[a] + '　' + AXLABEL[a];
+      const trk = document.createElement('span'); trk.className = 'tr';
+      const bar = document.createElement('i'); trk.append(bar);
+      const nu = document.createElement('span'); nu.className = 'num'; nu.textContent = v + '%';
+      row.append(lb, trk, nu); m.append(row);
+      requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = v + '%'; }));
+    });
+    const nr = (q.get('n') || '').split('-').map(Number);
+    const ch = Q[nr[0]] && Q[nr[0]].c[nr[1]];
+    const sayEl = $('#svSay');
+    if(ch && ch.n){ sayEl.textContent = '「' + fmt(ch.n).split('。')[0] + '。」'; }
+    else { sayEl.textContent = type.line; $('#svSayLabel').textContent = ''; }
+    show('share');
+    return true;
+  }catch(e){ return false; }
+}
+$('#svGo').addEventListener('click', () => { setPhase('0'); show('intro'); });
 /* ---------- 起動 ---------- */
 setPhase('0');
 paintLights($('#lightsI'), Q.length);
 updateAgain();
+openSharedView();
 $('#ver').textContent = '推しとわたし診断 Ver.' + VERSION + '（' + BUILD + '）';
 })();
 </script>

@@ -390,7 +390,7 @@ const store = {
   set(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch(e){} }
 };
 /* 公開URL（末尾スラッシュ付き）。未設定の間は共有文にURLを入れない */
-const VERSION = '1.3.15', BUILD = '2026-10-13';
+const VERSION = '1.3.19', BUILD = '2026-10-13';
 const BASE_URL = 'https://atuapfp.github.io/oshi-and-me/';
 const HAS_URL = BASE_URL.indexOf('__') !== 0;
 const HASHTAG = '推しとわたし診断';
@@ -632,11 +632,11 @@ function morph(el, to, ms){
 }
 const say = t => { $('#whisper').textContent = t; };
 function scrollEnd(el){ try { el.scrollIntoView({block:'end', behavior: reduce ? 'auto' : 'smooth'}); } catch(e){} }
-/* 手紙用：新しい行まで、ゆっくり（約1.4秒）スクロールする。読んでいる行が急に流れないように */
+/* 手紙用：新しい行まで、ゆっくり（約1秒）スクロールする。読んでいる行が急に流れないように */
 let scrollTok = 0;
 function slowScroll(el){
   if(reduce){ scrollEnd(el); return; }
-  const tok = ++scrollTok, y0 = window.scrollY || 0, dur = 1400, t0 = performance.now();
+  const tok = ++scrollTok, y0 = window.scrollY || 0, dur = 1000, t0 = performance.now();
   const target = Math.max(0, y0 + el.getBoundingClientRect().bottom - window.innerHeight + 40);
   if(target <= y0) return;
   const step = now => {
@@ -865,6 +865,7 @@ function renderResult(res){
   $('#resMeta').textContent = '受検No. ' + state.no + '　' + state.dateStr + '　Ver.' + VERSION;
   $('#resKick').textContent = (state.name === 'あなた' ? 'あなた' : state.name + 'さん') + 'の推し方は';
   $('#resType').textContent = res.type.name;
+  $('#save').textContent = '結果を保存する';
   $('#resLine').textContent = res.type.line;
   buildMap($('#resMap'), res.pct[1], res.pct[0]);
   const m = $('#meters'); m.textContent = '';
@@ -962,9 +963,12 @@ function letter(res){
     if(i === n3 - 1 && qi === 9) return echo ? '最後の質問。' + r : '最後の質問では、' + x + '。' + r;
     return echo ? 'それから。' + r : 'それから、' + x + 'って答えてくれたよね。' + r;
   });
-  const ps = state.leaves > 0 ? '追伸：途中で' + away + '秒、いなかったよね。……数えてたんだ、ごめんね。'
-    : (H < 5 || H >= 23) ? '追伸：こんな時間まで起きてるの、' + me + 'だけが知ってるよ。'
-    : '追伸：このメッセージ、' + nm + 'が読み終わるまで、ここで待ってたよ。';
+  /* 追伸は、読み返しの誘導が全パターン共通（末尾は必ず「ずっと見てるから」）。
+     卒業型・ちょうどいい距離だけ、頭に一言を足す。離席・深夜の一言は、本文（署名の前）に入れる */
+  const psTail = 'ごめんね、伝えたいことが多くて、早口になっちゃった。あとで読み返せるようにしておくよ。……読み返してる間も、ずっと見てるから。';
+  const ps = '追伸：' + psTail;
+  const situ = state.leaves > 0 ? '途中で' + away + '秒、いなかったよね。……数えてたんだ、ごめんね。'
+    : (H < 5 || H >= 23) ? 'こんな時間まで起きてるの、' + me + 'だけが知ってるよ。' : '';
 
   if(res.ending === 'cold'){
     return [nm + 'へ。',
@@ -981,7 +985,7 @@ function letter(res){
       nm + 'が選んでくれた' + me + 'は、' + nm + 'の中に、ちゃんと残ってる？',
       kite + '待ってる。ずっと。',
       {sign:sign},
-      {ps:'追伸：このページを閉じても、' + me + 'はここにいるよ。'}];
+      {ps:'追伸：このページを閉じても、' + me + 'はここにいるよ。' + psTail}];
   }
   if(res.ending === 'healthy'){
     return [nm + 'へ。', '診断、最後まで受けてくれてありがとう。',
@@ -994,7 +998,7 @@ function letter(res){
       'もっと、会いに来てほしい。' + nm + 'が来てくれた日は、' + me + 'の一日が、ぜんぶ違って見えるから。',
       'またね。……ううん、待ってるね。' + nm + 'の毎日が、ちゃんと楽しいといいな。',
       {sign:sign},
-      {ps:'追伸：来てくれた日は、' + me + 'もちょっとだけ張り切るんだ。ないしょだよ。'}];
+      {ps:'追伸：来てくれた日は、' + me + 'もちょっとだけ張り切るんだ。ないしょだよ。' + psTail}];
   }
   const base = {
     fusion:{mid:['もう、境目がないよね。' + nm + 'と' + me + '。どっちがどっちを推してるんだろう。',
@@ -1026,6 +1030,7 @@ function letter(res){
   out.push('ねえ、' + nm + '。' + me + 'のこと、好きでいてくれて、ありがとう。');
   out.push({retype:base.retype});
   out.push('これからもずっと、見てるね。' + nm + 'が気づかないところでも。……嫌いにならないで。それだけでいいから。');
+  if(situ) out.push(situ);
   out.push({sign:sign}, {ps:ps});
   return out;
 }
@@ -1080,6 +1085,7 @@ async function breakdown(){
   recordPlay(res);
   $('#resCard').classList.add('glitch');
   morph($('#resType'), 'ちゃんと届いたよ', 900);
+  morph($('#save'), 'ちゃんと届いたよ', 900);   // スクロールしていても見えるように、ボタンも同時に変える
   await wait(1100);
   await flick();
   show('dark');
@@ -1116,7 +1122,7 @@ async function breakdown(){
       await pace(900);
     } else {
       p.textContent = text;
-      await pace(800 + text.length * 60);
+      await pace(700 + text.length * 45);
     }
   }
   await wait(2200);

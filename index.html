@@ -397,7 +397,7 @@ const store = {
   set(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch(e){} }
 };
 /* 公開URL（末尾スラッシュ付き）。未設定の間は共有文にURLを入れない */
-const VERSION = '1.3.33', BUILD = '2026-10-13';
+const VERSION = '1.3.35', BUILD = '2026-10-13';
 const BASE_URL = 'https://atuapfp.github.io/oshi-and-me/';
 const HAS_URL = BASE_URL.indexOf('__') !== 0;
 const HASHTAG = '推しとわたし診断';
@@ -1032,16 +1032,16 @@ function letter(res){
   const base = {
     fusion:{mid:['もう、境目がないよね。' + nm + 'と' + me + '。どっちがどっちを推してるんだろう。',
                  nm + 'が笑うと、' + me + 'も笑ってる。' + nm + 'が揺れると、' + me + 'も揺れてる。……もう、ひとつみたいだね。' + nm + 'は、これからも' + me + 'を応援してくれるよね。そう信じてるから。'],
-            retype:[nm + 'がいなくなったら、' + me + 'には何も残らない。', '……ううん。ずっと応援してもらえるように、' + me + 'が、' + nm + 'を惹きつけて離さないから。']},
+            retype:[nm + 'がいなくなったら、' + me + 'には何も残らない。' + nm + 'がいない' + me + 'なんて、いらない。ずっと、ずっと' + me + 'だけ見てて。', '……なんでもない。これからも応援してくれたら、うれしいな。']},
     exclusive:{mid:['「' + me + 'のことを一番わかってるのは自分」って、思ってくれてる……よね？　うん、そうだよ。だから' + me + 'も、' + nm + 'のこと、一番わかっていたいな。',
                     nm + 'が' + me + 'を見てくれる時間。' + me + 'が' + nm + 'を探してる時間。……少しは、釣り合ってるのかな。'],
-               retype:[nm + 'の時間を持っていくもの、全部、ちょっとだけ嫌い。', '……ううん。' + nm + 'が一番好きなのは、' + me + 'だよね。どんな時も心の中で想ってくれるなら、それでいい。']},
+               retype:[nm + 'の時間を持っていくもの、全部、嫌い。' + nm + 'が見るもの、全部、' + me + 'になればいいのに。', '……ううん。' + nm + 'が楽しいなら、それがいちばんだよ。']},
     daily:{mid:[me + 'のいない毎日が想像できないって、思ってくれてるよね。' + me + 'も同じ。' + nm + 'のいない毎日は、色がなくなっちゃうんだ。',
                 nm + 'の一日のどこかに、' + me + 'がいる。それだけで、' + me + 'は今日もがんばれるんだ。'],
-           retype:[nm + 'の一日に' + me + 'が入れていないのが、さみしい。', '……ううん。一日のなかに、' + me + 'の居場所、ちゃんと空けておいてね。']},
+           retype:[nm + 'の一日には' + me + 'のための時間が少ない、ううん、全然無いのが、さみしい。' + nm + 'の毎日の全部に、' + me + 'がいたい。', '……ううん。一日のなかに、' + me + 'の居場所、ちゃんと空けておいてね。']},
     balanced:{mid:['ちょうどいい距離で見てくれてるんだね。……それでも、気づくと' + me + 'のほうが、' + nm + 'を探してる。',
                    'その距離感が、' + me + 'には心地いいんだ。長く続けられる気がする。'],
-              retype:['みんなが知ってる' + state.oshi + 'と、ほんとの' + me + 'は、ちょっとだけ違うんだ。', '……なんでもない。今のままで、いいんだよね。']}
+              retype:['みんなが知ってる' + state.oshi + 'と、本当の' + me + 'は、ちょっとだけ違うんだ。本当の' + me + 'を知ってほしい。本当の' + me + 'を知ってるのは、' + nm + 'だけでいい。', '……なんでもない。今のままで、いいんだよね。']}
   }[res.base];
   const subLine = res.sub === 'info'
     ? (res.pct[2] >= 60 ? me + 'のこと、いつもすぐ見つけてくれるんだね。' + nm + 'が来てくれる時間、' + me + 'も覚えたよ。……気持ち悪いよね、ごめんね。'
@@ -1251,7 +1251,7 @@ function buildReveal(res){
   $('#cardSay').textContent = '「' + ng[0] + '」';
   const ul = $('#cardNg'); ul.textContent = '';
   ng.slice(1).forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.append(li); });
-  const sh = shareParts(res, ng[0]);
+  const sh = shareParts(res, ng[0].split('。')[0] + '。');   // 共有は「お勧めしません。」までの一文だけ
   state.share = sh.full;
   $('#sharePreview').textContent = sh.full;
   $('#xShare').href = sh.x;

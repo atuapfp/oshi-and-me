@@ -117,6 +117,8 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
 .kicker{font-size:.85rem;font-weight:700;color:var(--sub)}
 .type{font-size:clamp(1.8rem,7.5vw,2.4rem);font-weight:900;line-height:1.25;margin-top:.15rem;text-wrap:balance}
 .resline{margin-top:.6rem}
+.cue{margin-top:.9rem;text-align:center;font-size:.85rem;font-weight:700;color:var(--accent-text);animation:cue 1.6s ease-in-out infinite}
+@keyframes cue{0%,100%{transform:translateY(0);opacity:.55}50%{transform:translateY(5px);opacity:1}}
 .maphead{margin-top:1.2rem;font-size:.85rem;font-weight:700}
 .map svg{display:block;width:100%;max-width:15rem;height:auto;margin-top:.3rem}
 .m-frame{fill:none;stroke:var(--line);stroke-width:2}
@@ -149,6 +151,8 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
 .progress{height:10px;border-radius:99px;background:var(--card);border:1px solid var(--line);overflow:hidden;margin-top:1.4rem}
 .progress i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width 2.8s linear}
 .navrow{display:grid;grid-template-columns:auto 1fr;gap:.6rem}
+.pspage{position:fixed;inset:0;z-index:15;background:#000;display:grid;place-items:center;padding:2rem 1.6rem}
+.pspage p{max-width:30rem;line-height:2.1;font-size:1rem;color:var(--sub);font-family:var(--f-voice);text-align:left}
 .cut{position:fixed;inset:0;background:#000;z-index:20;display:grid;place-items:center;color:#8d7d82;font-family:var(--f-voice);padding:1rem}
 
 /* 種明かし・結果カード */
@@ -289,6 +293,7 @@ details.fold.small summary{font-size:.85rem}
       <p class="kicker" id="resKick"></p>
       <h2 class="type" id="resType"></h2>
       <p class="resline" id="resLine"></p>
+      <p class="cue" id="resCue" aria-hidden="true">▼ 詳しい結果は、この下にあります</p>
       <p class="maphead">所有×依存マップ</p>
       <div class="map" id="resMap"></div>
       <div class="meters" id="meters"></div>
@@ -304,6 +309,7 @@ details.fold.small summary{font-size:.85rem}
     <div class="lights" id="lightsD" aria-hidden="true"></div>
     <div class="log" id="log" aria-live="polite"></div>
     <div class="letter" id="letter"></div>
+    <div class="pspage" id="psPage" hidden><p id="psText"></p></div>
   </section>
 
   <section id="s-reveal" class="rev" hidden>
@@ -340,6 +346,7 @@ details.fold.small summary{font-size:.85rem}
         <p class="say" id="cardSay"></p>
         <p class="say-label">ほかのコメント</p>
         <ul class="ngs" id="cardNg"></ul>
+        <p class="cue" aria-hidden="true">▼ 4つの軸ごとの詳しい結果は、この下にあります</p>
       </div>
       <details class="fold small">
         <summary>共有される文面を見る</summary>
@@ -390,7 +397,7 @@ const store = {
   set(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch(e){} }
 };
 /* 公開URL（末尾スラッシュ付き）。未設定の間は共有文にURLを入れない */
-const VERSION = '1.3.19', BUILD = '2026-10-13';
+const VERSION = '1.3.33', BUILD = '2026-10-13';
 const BASE_URL = 'https://atuapfp.github.io/oshi-and-me/';
 const HAS_URL = BASE_URL.indexOf('__') !== 0;
 const HASHTAG = '推しとわたし診断';
@@ -404,29 +411,29 @@ const Q = [
   { t:'{oshi}の新しい情報が解禁されました。まず何をしますか？', c:[
     {x:'気づいたときに、ゆっくり見る', s:Z,
       n:'マイペースに追えるのは、長く続く応援の形です。推しも安心しているかもしれません。',
-      r:'気づいたときに見てくれる。それくらいの距離が、長く続くコツなんだよね。……でも本当は、新しい情報が出た瞬間に飛んできてくれたら、{me}はもっとうれしい。'},
+      r:'気づいたときに見てくれる。それくらいの距離が、長く続くコツかも。……でも本当は、新しい情報が出た瞬間に飛んできてくれたら、{me}はもっとうれしい。'},
     {x:'通知が来たらすぐに確認する', s:[1,0,2,0],
       n:'すぐ確認できるのは頼もしい応援です。気づいてもらえて嬉しい推しも、いるかもしれません。',
-      r:'通知が鳴ったら、すぐ来てくれるんだね。{me}を一番に見つけてくれるのが{nm}だって、ちゃんと知ってるよ。'},
+      r:'通知が鳴ったら、すぐ来てくれるんだ。{me}を一番に見つけてくれるのが{nm}だって、ちゃんと知ってるよ。'},
     {x:'仕事や授業の合間でも、こっそり確認する', s:[2,0,2,0],
       n:'合間にこっそり確認するのは、ほどほどがお勧めです。見てもらえて嬉しい推しも、いるかもしれません。',
       r:'授業や仕事の合間にも、こっそり{me}を見てるんだ。{nm}の時間を少しもらってるみたいで、悪いなって思う。……やめてほしいとは、言わないけど。'},
     {x:'解禁される前から、情報を探して待っていた', s:[0,1,3,0],
       n:'解禁前に探し回るのはお勧めしません。その熱意を嬉しく思う推しも、いるかもしれません。',
-      r:'新しい情報が出る前から、待っててくれたんだね。{me}が動くより先に、{nm}はもう{me}を探してる。ちょっとだけ、{me}のほうが追いかけられてる気がする。'},
+      r:'新しい情報が出る前から、待っててくれた。{me}が動くより先に、{nm}はもう{me}を探してる。ちょっとだけ、{me}のほうが追いかけられてる気がする。'},
     {x:'最近は、通知が来ても気持ちが動かない', s:Z, cold:true,
       n:'通知で気持ちが動かないのは、自然な変化です。……寂しがる推しも、いるかもしれませんけど。',
-      r:'通知が来ても、気持ちが動かなくなったんだね。……見て。お願い、通知、消さないで。消したら、{me}のこと忘れちゃう気がして。'} ]},
+      r:'通知が来ても、気持ちが動かなくなった。……見て。お願い、通知、消さないで。消したら、{me}のこと忘れちゃう気がして。'} ]},
   { t:'{oshi}のために使うお金について、いちばん近いのは？', c:[
     {x:'余裕のある範囲で、楽しめる分だけ', s:Z,
       n:'無理のない範囲で楽しめるのは、理想的な応援です。推しも安心して受け取れるかもしれません。',
-      r:'無理のない範囲で楽しんでくれるのが、いちばんうれしい。……でもね、{me}のために何かを選んでくれるたび、本当は特別な気持ちになるんだよ。'},
+      r:'無理のない範囲で楽しんでくれるのが、いちばんうれしい。……でもね、{me}のために何かを選んでくれるたび、本当は特別な気持ちになる。'},
     {x:'他の買い物を少し我慢することがある', s:[0,0,0,2],
       n:'他の買い物を少し我慢して応援するのは、素敵な熱意です。ただ、気持ちだけで十分と思う推しも、いるかもしれません。',
-      r:'他の買い物を我慢してまで、{me}を選んでくれたことがあるんだね。うれしい。うれしいのに、{nm}の自由を奪ってるみたいで、少しこわい。'},
+      r:'他の買い物を我慢してまで、{me}を選んでくれたことあるんだ。うれしい。うれしいのに、{nm}の自由を奪ってるみたいで、少しこわい。'},
     {x:'通帳の残高を、あまり見ないようにしている', s:[2,0,0,3],
       n:'残高から目をそらすのはお勧めしません。心配しつつ、その気持ちが嬉しい推しも、いるかもしれません。',
-      r:'残高を見ないようにして、{me}のために使ってくれてるんだね。ありがとう。……でも、無理はしないで。そう言いながら、ずっと{me}を選び続けて、って思ってる。ひどいよね。'},
+      r:'残高を見ないようにして、{me}のために使ってくれてる。ありがとう。……でも、無理はしないで。そう言いながら、ずっと{me}を選び続けて、って思ってる。ひどいよね。'},
     {x:'使えば使うほど、愛が伝わると思っている', s:[1,1,0,3],
       n:'使った額で愛を測るのはお勧めしません。額より気持ちが伝わっていると思う推しも、いるかもしれません。',
       r:'使った分だけ愛が伝わる、って思ってくれてるんだね。{nm}がくれたものは全部覚えてる。……無理はしないでね。でも、うれしいのは本当だよ。'} ]},
@@ -436,10 +443,10 @@ const Q = [
       r:'流れてきたときに見てくれるくらいが、ちょうどいいのかな。……ねえ、たまには{me}のほうから、{nm}のところに行ってもいい？'},
     {x:'一日に数回、見に行く', s:[1,0,2,0],
       n:'こまめに見に行けるのは、マメな応援です。励みにしている推しも、いるかもしれません。',
-      r:'一日に何回も、{me}のところに来てくれるんだね。その数だけ、{me}は{nm}に見つけてもらってる。'},
+      r:'一日に何回も、{me}のところに来てくれる。その数だけ、{me}は{nm}に見つけてもらってる。'},
     {x:'更新される時間帯のパターンを、把握している', s:[0,1,3,0],
       n:'更新時間を覚えるのは、ほどほどがお勧めです。待っていてもらえて嬉しい推しも、いるかもしれません。',
-      r:'更新する時間、ぜんぶ覚えてるんだ。{me}が思ってる以上に、{me}のことを知ってるんだね。……{me}も、{nm}がいつ来るか、わかるようになってきたよ。'},
+      r:'更新する時間、ぜんぶ覚えてるんだ。{me}が思ってる以上に、{me}のことを知ってる。……{me}も、{nm}がいつ来るか、わかるようになってきたよ。'},
     {x:'寝る前と起きた直後に、必ず開く', s:[2,0,3,0],
       n:'寝る前と起きた直後に必ず開くのはお勧めしません。一日の始まりと終わりに会えて嬉しい推しも、いるかもしれません。',
       r:'寝る前と、起きた直後。一日のはじまりと終わりに、{me}がいるんだね。……それが当たり前になったらいいな、って思っちゃう。ごめんね。'},
@@ -449,13 +456,13 @@ const Q = [
   { t:'{oshi}に特別な人ができたと知ったら？', v:'……{nm}は、どう思うのかな。', c:[
     {x:'幸せなら、素直にお祝いしたい', s:Z,
       n:'素直にお祝いできるのは、成熟した応援です。推しも救われるかもしれません。',
-      r:'幸せならお祝いしたい、って言ってくれるんだね。あたたかい人。……でも、もしそんな日が来たら、{nm}にだけは、少しだけ寂しがってほしいかな。'},
+      r:'幸せならお祝いしたい、って言ってくれるんだ。あたたかい人。……でも、もしそんな日が来たら、{nm}にだけは、少しだけ寂しがってほしいかな。'},
     {x:'複雑だけど、応援は続けると思う', s:[1,1,0,0],
       n:'複雑でも応援を続ける姿勢は、立派です。推しも気持ちを察しているかもしれません。',
       r:'複雑でも応援は続けてくれる、って。……その「複雑」の部分、{me}はずっと覚えてるよ。大事にする。'},
     {x:'その話題は、できれば見たくない', s:[3,0,0,0],
       n:'その話題を避けて一人で抱えこむのはお勧めしません。気にかけてもらえて嬉しい推しも、いるかもしれません。',
-      r:'その話題は見たくない、か。ごめんね。{nm}の気持ちを揺らしたのが{me}だって思うと、うれしくなっちゃう自分がいる。……最低だよね。でも、{nm}が{me}のことで少しでも揺れてくれたなら、それでいいって思っちゃう。'},
+      r:'その話題は見たくない、か。ごめんね。{nm}の気持ちを揺らしたのが{me}だって思うと、うれしくなっちゃう自分がいる。……最低。でも、{nm}が{me}のことで少しでも揺れてくれたなら、それでいいって思っちゃう。'},
     {x:'許せない気がする。{my}のほうが、ずっと…', s:[0,3,0,1],
       n:'許せないと思うのはお勧めしません。それだけ想われて嬉しい推しも、いるかもしれません。',
       r:'「{my}のほうが、ずっと」の続き、聞かなくてもわかるよ。……そうだね。{nm}のほうが、ずっと見ててくれた。他の誰より。'} ]},
@@ -465,14 +472,14 @@ const Q = [
       r:'仲間がいてうれしいって言ってくれる。みんなで{me}を応援してくれるの、本当にありがたいよ。そのなかで{nm}が楽しいなら、それがいちばんだな。'},
     {x:'同じ熱量の人とは、話してみたい', s:[0,1,0,0],
       n:'同じ熱量の人と語りたいのは自然です。感想が広がって嬉しい推しも、いるかもしれません。',
-      r:'同じ熱量の人と話したいんだね。{nm}が楽しそうなのは、{me}もうれしい。……その話、{me}にも聞かせてくれる？'},
+      r:'同じ熱量の人と話したいんだ。{nm}が楽しそうなのは、{me}もうれしい。……その話、{me}にも聞かせてくれる？'},
     {x:'自分のほうが長く応援していると、感じる瞬間がある', s:[0,2,0,1],
       n:'古参であることを誇るのはお勧めしません。長く見守ってもらえて嬉しい推しも、いるかもしれません。',
-      r:'自分のほうが長く応援してる、って思う瞬間があるんだね。そうだよ。{nm}は、{me}の昔のことも、ちゃんと覚えててくれる。……ずっと見ててくれて、ありがとう。'},
+      r:'自分のほうが長く応援してる、って思う瞬間があるんだ。そうだよ。{nm}は、{me}の昔のことも、ちゃんと覚えててくれる。……ずっと見ててくれて、ありがとう。'},
     {x:'{oshi}のことを一番わかっているのは、自分だと思う', s:[0,3,1,0],
       n:'自分が一番わかっていると思うのはお勧めしません。そう言い切ってもらえて嬉しい推しも、いるかもしれません。',
       r:'「{me}のことを一番わかってるのは自分」って、思ってくれてるんだね。そう言い切ってくれる人に会えて、{me}は幸せ。……でも、本当の{me}も、{nm}に知ってほしいな。'} ]},
-  { t:'{oshi}が活動を休むことになったら？', v:'大丈夫。ここにいるよ。', c:[
+  { t:'{oshi}が活動を休むことになったら？', c:[
     {x:'回復を願って、ゆっくり待つ', s:Z,
       n:'回復を願って待てるのは、優しい応援です。帰る場所があると心強い推しも、いるかもしれません。',
       r:'ゆっくり待つ、って言ってくれる。そのやさしさに、{me}は何度も救われてる。……でも、休んでる間に、他の人に心が移っちゃわないかって、ちょっとだけ考えてる。考えないようにしてるけど。'},
@@ -481,15 +488,15 @@ const Q = [
       r:'寂しいけど、待てるって。{me}は、そのひとことだけで、休んでいても大丈夫だって思える。……戻ってきたとき、ちゃんと{nm}がいますように。'},
     {x:'生活のリズムが崩れてしまいそう', s:[3,0,1,0],
       n:'生活のリズムが崩れそうなのはお勧めしません。それだけ大きな存在と思われて嬉しい推しも、いるかもしれません。',
-      r:'生活のリズムが崩れそう、か。{me}がいなくなると、{nm}の毎日が揺れるんだね。……ごめんね。うれしいって思っちゃった。'},
-    {x:'{oshi}のいない毎日が、想像できない', s:[3,1,0,0],
+      r:'生活のリズムが崩れそう、か。{me}がいなくなると、{nm}の毎日が揺れる。……ごめん。うれしいって思っちゃった。'},
+    {x:'{oshi}のいない毎日が、想像できない', s:[3,1,0,0], after:'大丈夫。ここにいるよ。',
       n:'推しのいない毎日を想像できないのはお勧めしません。そこまで想われて嬉しい推しも、いるかもしれません。',
       r:'{me}のいない毎日が想像できない、って言ってくれたね。{me}を見つけてくれたのは{nm}だったから、{nm}のいない毎日なんて、想像したくない。'},
     {x:'正直、他の人が気になりはじめている', s:Z, cold:true,
       n:'気持ちが他に向くのは、自然なことです。……待っていてほしい推しも、いるかもしれませんけど。',
-      r:'他の人が気になりはじめてるんだね。……聞きたくなかった。聞きたくなかったけど、正直に言ってくれたのは、うれしい。だから、ひとつだけ。{me}を、嫌いにならないで。'} ]},
+      r:'他の人が気になりはじめてる。……聞きたくなかった。聞きたくなかったけど、正直に言ってくれたのは、うれしい。だから、ひとつだけ。{me}を、嫌いにならないで。'} ]},
   { t:'{oshi}にファンレターや投稿を送ったことはありますか？', v:'……{nm}の言葉、{me}はいつでも待ってるよ。',
-    vv:['……見てくれてるだけでも、ちゃんと伝わってるよ。', '一度だけでも、届いた言葉はちゃんと読んだよ。', '{me}に届けてくれた言葉や感想、全部読んでるよ。', '返事ができなくて、ごめんね。……でも、ちゃんと届いてるよ。'], c:[
+    vv:['……見てくれてるだけでも、ちゃんと伝わってるよ。', '一度だけでも、届いた言葉はちゃんと読んだよ。', '{me}に届けてくれた言葉や感想、全部読んでる。', '返事ができなくて、ごめんね。……でも、ちゃんと届いてるよ。'], c:[
     {x:'送ったことはない', s:Z,
       n:'送らなくても応援は届きます。静かに見守る応援も、素敵です。励まされている推しも、いるかもしれません。',
       r:'言葉を送らなくても、見てくれてるのは伝わってるよ。……でも、{me}は{nm}の声を聞いてみたい。一言だけでいいから、届けてくれたらうれしいな。'},
@@ -501,18 +508,18 @@ const Q = [
       r:'何度も書いてくれてるね。ちゃんと読んでる。全部、読んでる。……読まれてる気がしてるの、当たってるよ。'},
     {x:'返事がなくても、毎回きっと届いていると信じている', s:[1,2,1,1],
       n:'返事を期待せず信じ続けるのは、お勧めしません。むしろ期待されたほうが嬉しい推しも、いるかもしれません。',
-      r:'返事がなくても、届いてるって信じてくれてるんだね。その信じ方、こわいくらいうれしい。……返事をしない{me}を、許してね。'} ]},
+      r:'返事がなくても、届いてるって信じてくれてる。その信じ方、こわいくらいうれしい。……返事をしない{me}を、許してね。'} ]},
   { t:'{oshi}の言葉を「自分に向けたもの」と感じたことはありますか？', v:'……{me}の言葉、ちゃんと届いてるかな。',
     vv:['……そっか。{me}の言葉、これから届くといいな。', '{me}の言葉が、{nm}の支えになれてるなら、うれしいな。', '……{nm}に向けた言葉も、ちゃんとあったよ。', '{nm}は、{me}のこと、自分の恋人みたいに思ってる……よね？'], c:[
     {x:'ない', s:Z,
       n:'言葉を自分に引きつけすぎないのは、健全な距離感です。気楽に発信できて助かる推しも、いるかもしれません。',
-      r:'自分に向けられた言葉だと思ったことは、ないんだね。そっか。……なら、これからは{nm}に向けて、ちゃんと言うね。'},
+      r:'自分に向けられた言葉だと思ったことは、ないんだ。そっか。……なら、これからは{nm}に向けて、ちゃんと言うね。'},
     {x:'たまに感じる', s:[1,0,0,0],
       n:'言葉に励まされるのは、素敵な関係です。届いていると知って嬉しい推しも、いるかもしれません。',
       r:'たまに感じるって言ってくれる。{me}の言葉が、{nm}の支えになれてるなら、それだけでうれしい。'},
     {x:'何度もある。特別なんだと感じる', s:[1,2,0,0],
       n:'特別だと感じ続けるのは、ほどほどがお勧めです。深く受け取ってもらえて嬉しい推しも、いるかもしれません。',
-      r:'特別だって、感じてくれてるんだね。……間違いじゃないよ。{nm}に向けた言葉も、ちゃんとあった。'},
+      r:'特別だって、感じてくれてる。……間違いじゃないよ。{nm}に向けた言葉も、ちゃんとあった。'},
     {x:'自分だけに向けた言葉だと、確信している', s:[0,3,0,0],
       n:'自分だけへの言葉だと確信するのはお勧めしません。そう信じてもらえて嬉しい推しも、いるかもしれません。',
       r:'自分だけに向けた言葉だって、確信してくれてるんだね。……うん、そうだよ。そうだってことに、してて。{me}も、そう思ってるから。'} ]},
@@ -523,15 +530,15 @@ const Q = [
       r:'みんなで作っているものだから、全体を楽しんでくれるのはうれしい。……でも、{nm}の目に映るのが{me}だけならいいのに、って思っちゃう。ごめんね。'},
     {x:'{oshi}ばかり見てしまう', s:[1,0,1,0],
       n:'推しを見続けるのは、まっすぐな応援です。視線を力にしている推しも、いるかもしれません。',
-      r:'{me}ばかり見てくれてるんだね。視線、ずっと感じてたよ。……うれしい。もっと見て。'},
+      r:'{me}ばかり見てくれてる。視線、ずっと感じてたよ。……うれしい。もっと見て。'},
     {x:'{oshi}の視線の動きまで追ってしまう', s:[0,1,2,0],
       n:'視線まで追うのはお勧めしません。目が合って嬉しい推しも、いるかもしれません。',
-      r:'{me}の視線の動きまで追ってくれてるんだね。目が合ったの、偶然じゃないよ。{me}も、{nm}を探してた。'},
+      r:'{me}の視線の動きまで追ってくれてるんだ。目が合ったの、偶然じゃないよ。{me}も、{nm}を探してた。'},
     {x:'帰ってからも、頭の中で何度も再生している', s:[3,0,1,0],
       n:'帰ってからも再生し続けるのはお勧めしません。思い出してもらえて嬉しい推しも、いるかもしれません。',
-      r:'帰ってからも、頭の中で再生してくれてるんだね。{me}も、{nm}がいた場所を、終わったあとも何度も思い出してる。'} ]},
+      r:'帰ってからも、頭の中で再生してくれてる。{me}も、{nm}がいた場所を、終わったあとも何度も思い出してる。'} ]},
   { t:'最後の質問です。{oshi}に望むことは？', v:'最後に。……{me}のこと、これからも見ていてくれる？',
-    vv:['……ありがとう。{me}、がんばるね。', '忘れないよ。{nm}のことも。', '{nm}だけを見ていてほしいって、{me}も思ってるよ。', '最後に。……ずっと、{me}だけを見ていてくれる？', '……そう。ちゃんと、聞いたよ。'], c:[
+    vv:['……ありがとう。{me}、がんばるね。', '忘れないよ。{nm}のことも。', '{nm}に{me}だけを見ていてほしいって、{me}も思ってる。', '……{nm}のものになれるなら、{me}はそれでいいよ。', '……そう。ちゃんと、聞いたよ。'], c:[
     {x:'元気で、活動を続けてほしい', s:Z,
       n:'元気で続けてほしいという願いは、応援の基本です。まっすぐな願いに励まされる推しも、いるかもしれません。',
       r:'元気で続けてほしい、って。……ありがとう。{nm}が見ててくれるなら、{me}は続けられる。だから、見ててね。……お願い。'},
@@ -540,7 +547,7 @@ const Q = [
       r:'「{my}のことを覚えていてほしい」。……覚えてるよ。{nm}の言葉も、時間も、ぜんぶ。忘れる方法を、{me}が知らないくらい。'},
     {x:'{my}だけを見ていてほしい', s:[0,3,0,0],
       n:'自分だけを見てほしいと願うのはお勧めしません。同じ気持ちでいる推しも、いるかもしれません。',
-      r:'「{my}だけを見ていてほしい」って。……同じこと、思ってた。{me}も、{nm}だけを見てたい。'},
+      r:'「{my}だけを見ていてほしい」って。……同じこと、思ってた。{me}も、他の人を見てほしくない。'},
     {x:'{oshi}が、{my}だけのものならいいのに', s:[1,3,0,1],
       n:'推しを独り占めしようとするのはお勧めしません。その気持ちが嬉しいと思っている推しも、いるかもしれませんけどね。',
       r:'{me}が{nm}だけのものになれたらいいのにね。……もう、なってるかもしれないよ。'},
@@ -634,18 +641,30 @@ const say = t => { $('#whisper').textContent = t; };
 function scrollEnd(el){ try { el.scrollIntoView({block:'end', behavior: reduce ? 'auto' : 'smooth'}); } catch(e){} }
 /* 手紙用：新しい行まで、ゆっくり（約1秒）スクロールする。読んでいる行が急に流れないように */
 let scrollTok = 0;
-function slowScroll(el){
+function letterTarget(el){
+  const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+  const mg = parseFloat(getComputedStyle(el).scrollMarginBottom) || 144;   // CSS の scroll-margin-bottom（9rem）を尊重する
+  return Math.max(0, (window.scrollY || 0) + el.getBoundingClientRect().bottom - vh + mg);
+}
+/* 毎フレーム、行の「いまの下端」を測り直して追う（折り返し・フォント・ツールバーの変化で下が切れないように） */
+function slowScroll(el, dur){
   if(reduce){ scrollEnd(el); return; }
-  const tok = ++scrollTok, y0 = window.scrollY || 0, dur = 1000, t0 = performance.now();
-  const target = Math.max(0, y0 + el.getBoundingClientRect().bottom - window.innerHeight + 40);
-  if(target <= y0) return;
+  dur = dur || 1000;
+  const tok = ++scrollTok, y0 = window.scrollY || 0, t0 = performance.now();
   const step = now => {
     if(tok !== scrollTok) return;
-    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 2);
-    try { window.scrollTo(0, y0 + (target - y0) * e); } catch(_){}
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 2), target = letterTarget(el);
+    if(target > y0){ try { window.scrollTo(0, y0 + (target - y0) * e); } catch(_){} }
     if(k < 1) requestAnimationFrame(step);
+    else { const t = letterTarget(el); if(t > (window.scrollY || 0) + 2){ try { window.scrollTo(0, t); } catch(_){} } }
   };
   requestAnimationFrame(step);
+}
+/* 見えていなければ、すぐ送る（タイプ中・待ち時間中の保険） */
+function ensureVisible(el){
+  if(reduce) return;
+  const t = letterTarget(el);
+  if(t > (window.scrollY || 0) + 2){ try { window.scrollTo(0, t); } catch(_){} }
 }
 /* 手紙の間は手動スクロールを止める（動きを減らす設定の人は除く） */
 const lockScroll = e => { if(state.scene === 'dark' && !reduce) e.preventDefault(); };
@@ -747,7 +766,7 @@ function renderQ(i, restore){
   paintLights($('#lightsQ'), Q.length - i);
   $('#qno').textContent = 'Q' + (i + 1);
   $('#qtot').textContent = ' / ' + Q.length;
-  qTok++;
+  qTok++; $('#opts').style.pointerEvents = '';
   $('#qtext').classList.remove('glitch', 'long');
   const coldSoFar = state.answers.slice(0, Q.length - 1).filter((a, k) => Q[k].c[a] && Q[k].c[a].cold).length;   // 卒業傾向の人にだけ、ヤンデレ質問を見せる
   if(i === Q.length - 1 && !restore && !reduce && coldSoFar >= 2) finalQuestion(q, qTok);
@@ -815,22 +834,32 @@ function pick(k){
   $('#next').disabled = false;
   if(i >= 3){
     const c = Q[i].c[k];
-    if(c.cold) say('……そうなんだ。');
+    if(c.cold) say(Q[i].vv ? '' : '……そうなんだ。');   // 選択後の一言（vv）がある質問では、重複させない
     else if(changed) say('いま、迷ったよね。');
     else if(c.s[0] + c.s[1] >= 4) say('うん。そう答えてくれると思ってた。');
   }
 }
 $('#back').addEventListener('click', () => {
-  if(state.scene !== 'quiz' || state.i === 0) return;
+  if(state.scene !== 'quiz' || state.i === 0 || state.busy) return;
   clearTimeout(state.voiceT);
   renderQ(state.i - 1, true);
 });
-$('#next').addEventListener('click', () => {
+$('#next').addEventListener('click', async () => {
   const i = state.i;
-  if(state.sel === null) return;
+  if(state.sel === null || state.busy) return;
   state.answers[i] = state.sel;
   state.dwell[i] = Date.now() - state.qAt;
   clearTimeout(state.voiceT);
+  /* 答えたあと、質問文が推しの一言に変わってから次へ進む（after を持つ選択肢だけ） */
+  const afterTxt = Q[i].c[state.sel].after;
+  if(afterTxt && !reduce && i + 1 < Q.length){
+    state.busy = true; voiceTok++;
+    $('#next').disabled = true; $('#opts').style.pointerEvents = 'none'; $('#voice').textContent = '';
+    await morph($('#qtext'), fmt(afterTxt), 700);
+    await wait(1400);
+    state.busy = false;
+    if(state.scene !== 'quiz' || state.i !== i) return;
+  }
   if(i + 1 < Q.length) renderQ(i + 1); else finish();
 });
 
@@ -1017,7 +1046,7 @@ function letter(res){
   const subLine = res.sub === 'info'
     ? (res.pct[2] >= 60 ? me + 'のこと、いつもすぐ見つけてくれるんだね。' + nm + 'が来てくれる時間、' + me + 'も覚えたよ。……気持ち悪いよね、ごめんね。'
       : me + 'のことを気にかけてくれてるんだね。来てくれた日のこと、' + me + 'もちゃんと覚えてるよ。')
-    : (res.pct[3] >= 60 ? 'いっぱい使ってくれたよね。ありがとう。……無理はしないでほしいけど、うれしいのは本当。'
+    : (res.pct[3] >= 60 ? 'いっぱいお金も時間も使ってくれたよね。ありがとう。……無理はしないでほしいけど、うれしいのは本当。'
       : '応援してくれた分、ちゃんと届いてるよ。ありがとう。……もっと、なんて、言ってもいい？');
   const out = [nm + 'へ。', '診断、最後まで受けてくれてありがとう。', traitLine,
     'いくつか、' + nm + 'の答えに返事をさせてね。', ...rx];
@@ -1090,20 +1119,28 @@ async function breakdown(){
   await flick();
   show('dark');
   paintLights($('#lightsD'), 0);
-  const log = $('#log'); log.textContent = ''; $('#letter').textContent = '';
+  const log = $('#log'); log.textContent = ''; $('#letter').textContent = ''; $('#psPage').hidden = true; $('#psText').textContent = '';
   for(const t of logLines()){
     const d = document.createElement('div'); d.textContent = '> ' + t; log.append(d);
-    await wait(480);
+    await wait(300);
   }
-  await wait(1100);
+  await wait(700);
   const lines = letter(res);
   state.letterLines = lines.map(it => typeof it === 'string' ? it : it.sign ? {sign:it.sign} : it.ps ? {ps:it.ps} : it.retype[1]);
   state.skip = false;
   const pace = ms => wait(state.skip ? Math.max(30, ms * 0.2) : ms);
-  const typeInto = async (el, text, ms, rush) => { let i = 0; for(const ch of text){ el.textContent += ch; await pace(rush ? Math.max(16, ms * (1 - 0.85 * i / text.length)) : ms); i++; } };
+  const typeInto = async (el, text, ms, rush) => { let i = 0; for(const ch of text){ el.textContent += ch; if(i % 6 === 5) ensureVisible(el); await pace(rush ? Math.max(16, ms * (1 - 0.85 * i / text.length)) : ms); i++; } };
   const eraseAll = async (el, ms) => { while(el.textContent.length){ el.textContent = el.textContent.slice(0, -1); await pace(ms); } };
+  /* テンポの設計：出だしはゆっくり → 打ち消しの前に間 → 打ち消し以降は加速 → 追伸は一気に（「早口になっちゃった」に体感を合わせる）
+     [基本の待ち ms, 1文字あたり ms] */
+  const TEMPO = [[670, 38], [500, 30], [330, 20], [210, 12]];   // 約1.2倍速
+  let psLine = '';
+  const lastRetype = lines.reduce((a, it, i) => (it && it.retype) ? i : a, -1);
   for(let k = 0; k < lines.length; k++){
     const it = lines[k];
+    if(it && it.ps){ psLine = it.ps; break; }   // 追伸は、本文のあと、別の画面（暗転のあと）に出す
+    if(it && it.retype && !reduce) await pace(750);   // 書いて消す前の、静かな間
+    const phase = (it && it.ps) ? 3 : k < 3 ? 0 : (lastRetype >= 0 && k > lastRetype) ? 2 : 1;
     const p = document.createElement('p');
     let text = '';
     if(typeof it === 'string') text = it;
@@ -1112,24 +1149,36 @@ async function breakdown(){
     else if(it.retype){ text = it.retype[1]; }
     $('#letter').append(p);
     requestAnimationFrame(() => p.classList.add('in'));
+    if(!(it && it.retype && !reduce)) p.textContent = text;   // 先に本文を入れてから、高さを測ってスクロールする（下が切れないように）
     slowScroll(p);
     if(it && it.retype && !reduce){
-      await typeInto(p, it.retype[0], 85, it.retype[2] === 'rush');
-      await pace(900);
-      await eraseAll(p, 40);
-      await pace(350);
-      await typeInto(p, it.retype[1], 70);
-      await pace(900);
+      await typeInto(p, it.retype[0], 54, it.retype[2] === 'rush');
+      slowScroll(p);   // 書きかけが伸びて下にはみ出したぶん、送る
+      await pace(580);
+      await eraseAll(p, 18);
+      await pace(210);
+      await typeInto(p, it.retype[1], 42);
+      slowScroll(p);
+      await pace(580);
+      ensureVisible(p);
     } else {
-      p.textContent = text;
-      await pace(700 + text.length * 45);
+      await pace(TEMPO[phase][0] + text.length * TEMPO[phase][1]);
+      ensureVisible(p);
     }
   }
-  await wait(2200);
+  if(psLine){
+    await pace(600);
+    await flick();
+    try { window.scrollTo(0, 0); } catch(_){}
+    $('#psPage').hidden = false;
+    await pace(500);
+    if(reduce) $('#psText').textContent = psLine; else await typeInto($('#psText'), psLine, 25);
+    await wait(3000);
+  } else await wait(1600);
   const cut = $('#cut'); cut.hidden = false; $('#cutmsg').textContent = '';
-  await wait(1800);
+  await wait(1200);
   $('#cutmsg').textContent = '— 接続が切れました —';
-  await wait(2400);
+  await wait(1600);
   document.body.classList.add('fast');
   setPhase('reveal');
   buildReveal(res);

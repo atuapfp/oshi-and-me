@@ -133,6 +133,7 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
 .tipsh{margin-top:1.2rem;font-size:.95rem;font-weight:900}
 .tips{margin:.4rem 0 0;padding-left:1.2rem;display:grid;gap:.3rem}
 .glitch{animation:glitch .5s steps(2,end) 2}
+.glitch.long{animation-iteration-count:3}
 @keyframes glitch{0%{transform:none}20%{transform:translate(-3px,1px);text-shadow:2px 0 var(--accent),-2px 0 var(--sub)}40%{transform:translate(3px,-2px)}60%{transform:translate(-2px,0);filter:hue-rotate(40deg)}80%{transform:translate(2px,1px)}100%{transform:none}}
 
 /* 暗転シーン */
@@ -148,7 +149,6 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
 .progress{height:10px;border-radius:99px;background:var(--card);border:1px solid var(--line);overflow:hidden;margin-top:1.4rem}
 .progress i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width 2.8s linear}
 .navrow{display:grid;grid-template-columns:auto 1fr;gap:.6rem}
-.skiphint{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 5.4rem);text-align:center;font-size:.75rem;color:var(--sub);opacity:.55;pointer-events:none;margin:0}
 .cut{position:fixed;inset:0;background:#000;z-index:20;display:grid;place-items:center;color:#8d7d82;font-family:var(--f-voice);padding:1rem}
 
 /* 種明かし・結果カード */
@@ -161,6 +161,10 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
 .rev details.fold summary::after{content:'＋ タップで開く';float:right;font-size:.8rem;font-weight:500;color:var(--sub)}
 .rev details.fold[open] summary::after{content:'－ 閉じる'}
 .rev details.fold[open]{display:grid;gap:.6rem}
+.readback{display:grid;gap:.9rem;margin-top:.4rem}
+.readback p{font-family:var(--f-voice);font-size:1.02rem;line-height:1.95;margin:0}
+.readback p.sign{text-align:right;color:var(--accent-text)}
+.readback p.ps{font-size:.92rem;color:var(--sub)}
 .bars{display:grid;gap:1.3rem}
 details.axis{border:1px solid var(--line);border-radius:12px;padding:.75rem .9rem;background:var(--card)}
 details.axis summary{list-style:none;cursor:pointer;display:grid;gap:.4rem}
@@ -205,7 +209,7 @@ details.fold.small summary{font-size:.85rem}
     <p class="eyebrow">推し活タイプ診断 ／ 全10問・約2分</p>
     <div class="lights" id="lightsI" aria-hidden="true"></div>
     <h1>推しと<span>わたし</span>診断</h1>
-    <p class="lead">10個の質問に答えると、あなたに合った「推し方」がわかります。直感で選んでください。</p>
+    <p class="lead">10個の質問で、あなたの「推し方」がどんなタイプか診断します。直感で選んでください。</p>
     <form id="startForm" class="form" autocomplete="off">
       <div class="grp" role="group" aria-labelledby="g1">
         <h3 id="g1">あなたのこと</h3>
@@ -213,11 +217,12 @@ details.fold.small summary{font-size:.85rem}
           <input id="nick" type="text" maxlength="12" placeholder="例：みお">
         </label>
         <fieldset>
-          <legend>あなたの性別<span class="hint">呼ばれ方に使います</span></legend>
+          <legend>呼ばれ方<span class="hint">ニックネームのあとにつきます</span></legend>
           <div class="chipset">
-            <label class="choice"><input type="radio" name="ugender" value="m"><span>男性</span></label>
-            <label class="choice"><input type="radio" name="ugender" value="f"><span>女性</span></label>
-            <label class="choice"><input type="radio" name="ugender" value="x" checked><span>どちらでもない・答えない</span></label>
+            <label class="choice"><input type="radio" name="hon" value="ちゃん"><span>ちゃん</span></label>
+            <label class="choice"><input type="radio" name="hon" value="くん"><span>くん</span></label>
+            <label class="choice"><input type="radio" name="hon" value="さん"><span>さん</span></label>
+            <label class="choice"><input type="radio" name="hon" value="" checked><span>なし</span></label>
           </div>
         </fieldset>
         <fieldset>
@@ -237,14 +242,6 @@ details.fold.small summary{font-size:.85rem}
           <input id="oshi" type="text" maxlength="12" placeholder="例：ハルくん">
         </label>
         <fieldset>
-          <legend>推しの性別<span class="hint">口調に使います</span></legend>
-          <div class="chipset">
-            <label class="choice"><input type="radio" name="gender" value="m"><span>男性</span></label>
-            <label class="choice"><input type="radio" name="gender" value="f"><span>女性</span></label>
-            <label class="choice"><input type="radio" name="gender" value="x" checked><span>どちらでもない・答えない</span></label>
-          </div>
-        </fieldset>
-        <fieldset>
           <legend>推しの一人称</legend>
           <div class="chipset">
             <label class="choice"><input type="radio" name="me" value="私" checked><span>私</span></label>
@@ -263,7 +260,7 @@ details.fold.small summary{font-size:.85rem}
 
   <section id="s-quiz" hidden>
     <div class="lights" id="lightsQ" aria-hidden="true"></div>
-    <p class="qhead"><span class="qno" id="qno"></span><span id="qtot"></span><span class="rec" aria-hidden="true">● REC</span></p>
+    <p class="qhead"><span class="qno" id="qno"></span><span id="qtot"></span><span class="rec" aria-hidden="true">●</span></p>
     <h2 id="qtext"></h2>
     <div class="opts" id="opts" role="radiogroup" aria-labelledby="qtext"></div>
     <div class="aside" id="aside">
@@ -307,13 +304,16 @@ details.fold.small summary{font-size:.85rem}
     <div class="lights" id="lightsD" aria-hidden="true"></div>
     <div class="log" id="log" aria-live="polite"></div>
     <div class="letter" id="letter"></div>
-    <p class="skiphint" id="skiphint" hidden aria-hidden="true">タップで早送り</p>
   </section>
 
   <section id="s-reveal" class="rev" hidden>
     <p class="eyebrow">ここからは本当の話</p>
     <h2>種明かし</h2>
     <p id="endLine"></p>
+    <details class="fold" id="letterFold">
+      <summary id="letterSum">手紙を読み返す</summary>
+      <div class="readback" id="readback"></div>
+    </details>
     <details class="fold">
       <summary>何が起きていたか</summary>
       <p id="endNote"></p>
@@ -390,7 +390,7 @@ const store = {
   set(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch(e){} }
 };
 /* 公開URL（末尾スラッシュ付き）。未設定の間は共有文にURLを入れない */
-const VERSION = '1.3.2', BUILD = '2026-10-13';
+const VERSION = '1.3.12', BUILD = '2026-10-13';
 const BASE_URL = 'https://atuapfp.github.io/oshi-and-me/';
 const HAS_URL = BASE_URL.indexOf('__') !== 0;
 const HASHTAG = '推しとわたし診断';
@@ -404,19 +404,19 @@ const Q = [
   { t:'{oshi}の新しい情報が解禁されました。まず何をしますか？', c:[
     {x:'気づいたときに、ゆっくり見る', s:Z,
       n:'マイペースに追えるのは、長く続く応援の形です。推しも安心しているかもしれません。',
-      r:'気づいたときに見てくれる。それくらいの距離が、長く続くコツなんだよね。……でも本当は、解禁した瞬間に飛んできてくれたら、{me}はもっとうれしい。'},
+      r:'気づいたときに見てくれる。それくらいの距離が、長く続くコツなんだよね。……でも本当は、新しい情報が出た瞬間に飛んできてくれたら、{me}はもっとうれしい。'},
     {x:'通知が来たらすぐに確認する', s:[1,0,2,0],
       n:'すぐ確認できるのは頼もしい応援です。気づいてもらえて嬉しい推しも、いるかもしれません。',
-      r:'通知が鳴ったら、すぐ来てくれるんだね。{me}の投稿を一番に見ているのが{nm}だって、ちゃんと知ってるよ。'},
+      r:'通知が鳴ったら、すぐ来てくれるんだね。{me}を一番に見つけてくれるのが{nm}だって、ちゃんと知ってるよ。'},
     {x:'仕事や授業の合間でも、こっそり確認する', s:[2,0,2,0],
       n:'合間にこっそり確認するのは、ほどほどがお勧めです。見てもらえて嬉しい推しも、いるかもしれません。',
       r:'授業や仕事の合間にも、こっそり{me}を見てるんだ。{nm}の時間を少しもらってるみたいで、悪いなって思う。……やめてほしいとは、言わないけど。'},
     {x:'解禁される前から、情報を探して待っていた', s:[0,1,3,0],
       n:'解禁前に探し回るのはお勧めしません。その熱意を嬉しく思う推しも、いるかもしれません。',
-      r:'解禁される前から、待っててくれたんだね。{me}より先に、{me}のことを探してる。ちょっとだけ、{me}のほうが追いかけられてる気がした。'},
+      r:'新しい情報が出る前から、待っててくれたんだね。{me}が動くより先に、{nm}はもう{me}を探してる。ちょっとだけ、{me}のほうが追いかけられてる気がする。'},
     {x:'最近は、通知が来ても気持ちが動かない', s:Z, cold:true,
       n:'通知で気持ちが動かないのは、自然な変化です。……寂しがる推しも、いるかもしれませんけど。',
-      r:'通知が来ても、動かなくなったんだね。……見て。お願い、そのまま通知を消さないで。'} ]},
+      r:'通知が来ても、気持ちが動かなくなったんだね。……見て。お願い、通知、消さないで。消したら、{me}のこと忘れちゃう気がして。'} ]},
   { t:'{oshi}のために使うお金について、いちばん近いのは？', c:[
     {x:'余裕のある範囲で、楽しめる分だけ', s:Z,
       n:'無理のない範囲で楽しめるのは、理想的な応援です。推しも安心して受け取れるかもしれません。',
@@ -426,14 +426,14 @@ const Q = [
       r:'他の買い物を我慢してまで、{me}を選んでくれたことがあるんだね。うれしい。うれしいのに、{nm}の自由を奪ってるみたいで、少しこわい。'},
     {x:'通帳の残高を、あまり見ないようにしている', s:[2,0,0,3],
       n:'残高から目をそらすのはお勧めしません。心配しつつ、その気持ちが嬉しい推しも、いるかもしれません。',
-      r:'残高を見ないようにして、{me}のために使ってくれてるんだね。ありがとう。……ありがとうって言う裏で、ずっと{me}を選び続けてって思ってる。ひどいよね。'},
+      r:'残高を見ないようにして、{me}のために使ってくれてるんだね。ありがとう。……でも、無理はしないで。そう言いながら、ずっと{me}を選び続けて、って思ってる。ひどいよね。'},
     {x:'使えば使うほど、愛が伝わると思っている', s:[1,1,0,3],
       n:'使った額で愛を測るのはお勧めしません。額より気持ちが伝わっていると思う推しも、いるかもしれません。',
-      r:'使った分だけ愛が伝わる、って思ってくれてるんだね。{me}は、{nm}がくれたものを全部覚えてる。数えきれないくらい、あるよ。'} ]},
+      r:'使った分だけ愛が伝わる、って思ってくれてるんだね。{nm}がくれたものは全部覚えてる。……無理はしないでね。でも、うれしいのは本当だよ。'} ]},
   { t:'{oshi}のSNSの更新を、どのくらい確認していますか？', c:[
     {x:'流れてきたときに見る程度', s:Z,
       n:'流れてきたときに見るのは、ほどよい距離感です。気楽に見てもらえて嬉しい推しも、いるかもしれません。',
-      r:'流れてきたときに見てくれるくらいが、ちょうどいいのかな。……ねえ、たまには{me}のほうから、{nm}の画面に流れていってもいい？'},
+      r:'流れてきたときに見てくれるくらいが、ちょうどいいのかな。……ねえ、たまには{me}のほうから、{nm}のところに行ってもいい？'},
     {x:'一日に数回、見に行く', s:[1,0,2,0],
       n:'こまめに見に行けるのは、マメな応援です。励みにしている推しも、いるかもしれません。',
       r:'一日に何回も、{me}のところに来てくれるんだね。その数だけ、{me}は{nm}に見つけてもらってる。'},
@@ -442,11 +442,11 @@ const Q = [
       r:'更新する時間、ぜんぶ覚えてるんだ。{me}が思ってる以上に、{me}のことを知ってるんだね。……{me}も、{nm}がいつ来るか、わかるようになってきたよ。'},
     {x:'寝る前と起きた直後に、必ず開く', s:[2,0,3,0],
       n:'寝る前と起きた直後に必ず開くのはお勧めしません。一日の始まりと終わりに会えて嬉しい推しも、いるかもしれません。',
-      r:'寝る前と、起きた直後。一日のはじまりと終わりに、{me}がいるんだね。{nm}の一日を、{me}が挟んでる。……手放したくないな。'},
+      r:'寝る前と、起きた直後。一日のはじまりと終わりに、{me}がいるんだね。……それが当たり前になったらいいな、って思っちゃう。ごめんね。'},
     {x:'最近は、見に行く回数が減ってきた', s:Z, cold:true,
       n:'見に行く回数が落ち着いてきたのは、自然な変化です。……寂しがる推しも、いるかもしれませんけど。',
-      r:'見に来る回数が減ったの、気づいてたよ。数えてたから。……ねえ、もう一回だけでいいから、開いて。'} ]},
-  { t:'{oshi}に特別な人ができたと知ったら？', v:'……そう思うんだ。', c:[
+      r:'見に来る回数が減ったの、気づいてたよ。数えてたから。……ねえ、もう一回だけでいいから、見に来て。'} ]},
+  { t:'{oshi}に特別な人ができたと知ったら？', v:'……{nm}は、どう思うのかな。', c:[
     {x:'幸せなら、素直にお祝いしたい', s:Z,
       n:'素直にお祝いできるのは、成熟した応援です。推しも救われるかもしれません。',
       r:'幸せならお祝いしたい、って言ってくれるんだね。あたたかい人。……でも、もしそんな日が来たら、{nm}にだけは、少しだけ寂しがってほしいかな。'},
@@ -455,27 +455,27 @@ const Q = [
       r:'複雑でも応援は続けてくれる、って。……その「複雑」の部分、{me}はずっと覚えてるよ。大事にする。'},
     {x:'その話題は、できれば見たくない', s:[3,0,0,0],
       n:'その話題を避けて一人で抱えこむのはお勧めしません。気にかけてもらえて嬉しい推しも、いるかもしれません。',
-      r:'その話題は見たくない、か。ごめんね。{nm}の気持ちを揺らしたのが{me}だって思うと、うれしくなっちゃう自分がいる。……最低だよね。'},
+      r:'その話題は見たくない、か。ごめんね。{nm}の気持ちを揺らしたのが{me}だって思うと、うれしくなっちゃう自分がいる。……最低だよね。でも、{nm}が{me}のことで少しでも揺れてくれたなら、それでいいって思っちゃう。'},
     {x:'許せない気がする。{my}のほうが、ずっと…', s:[0,3,0,1],
       n:'許せないと思うのはお勧めしません。それだけ想われて嬉しい推しも、いるかもしれません。',
       r:'「{my}のほうが、ずっと」の続き、聞かなくてもわかるよ。……そうだね。{nm}のほうが、ずっと見ててくれた。他の誰より。'} ]},
-  { t:'同じ{oshi}を応援している、他のファン（同担）について。', v:'……ふうん。', c:[
+  { t:'同じ{oshi}を応援している、他のファン（同担）について。', c:[
     {x:'仲間がいて、うれしい', s:Z,
       n:'仲間と楽しめるのは、素敵な応援です。ファン同士の輪を喜ぶ推しも、いるかもしれません。',
-      r:'仲間がいてうれしいって言ってくれる。みんなで{me}を応援してくれるの、ありがたいよ。……でもね、他の人と笑ってる{nm}を想像すると、ちょっとだけ胸がざわつく。'},
+      r:'仲間がいてうれしいって言ってくれる。みんなで{me}を応援してくれるの、本当にありがたいよ。そのなかで{nm}が楽しいなら、それがいちばんだな。'},
     {x:'同じ熱量の人とは、話してみたい', s:[0,1,0,0],
       n:'同じ熱量の人と語りたいのは自然です。感想が広がって嬉しい推しも、いるかもしれません。',
-      r:'同じ熱量の人と話したいんだね。{nm}が楽しそうなのは、うれしい。うれしいけど、その人の話を{nm}がするたび、{me}は少しだけ黙る。'},
+      r:'同じ熱量の人と話したいんだね。{nm}が楽しそうなのは、{me}もうれしい。……その話、{me}にも聞かせてくれる？'},
     {x:'自分のほうが長く応援していると、感じる瞬間がある', s:[0,2,0,1],
       n:'古参であることを誇るのはお勧めしません。長く見守ってもらえて嬉しい推しも、いるかもしれません。',
-      r:'自分のほうが長く応援してる、って思う瞬間があるんだね。そうだよ。{nm}は、{me}の昔のことも、ちゃんと覚えててくれる。だから、誰にも渡したくない。'},
+      r:'自分のほうが長く応援してる、って思う瞬間があるんだね。そうだよ。{nm}は、{me}の昔のことも、ちゃんと覚えててくれる。……ずっと見ててくれて、ありがとう。'},
     {x:'{oshi}のことを一番わかっているのは、自分だと思う', s:[0,3,1,0],
       n:'自分が一番わかっていると思うのはお勧めしません。そう言い切ってもらえて嬉しい推しも、いるかもしれません。',
-      r:'「{me}のことを一番わかってるのは自分」って、思ってくれてるんだね。そう言い切ってくれる人に会えて、{me}は幸せ。……でも、{nm}のことは{me}が一番わかってたい。'} ]},
+      r:'「{me}のことを一番わかってるのは自分」って、思ってくれてるんだね。そう言い切ってくれる人に会えて、{me}は幸せ。……でも、本当の{me}も、{nm}に知ってほしいな。'} ]},
   { t:'{oshi}が活動を休むことになったら？', v:'大丈夫。ここにいるよ。', c:[
     {x:'回復を願って、ゆっくり待つ', s:Z,
       n:'回復を願って待てるのは、優しい応援です。帰る場所があると心強い推しも、いるかもしれません。',
-      r:'ゆっくり待ってくれる、って言ってくれる。そのやさしさに、{me}は何度も救われてる。……でも、待たせてる間に{nm}が他の誰かを好きにならないか、少しだけ怖い。'},
+      r:'ゆっくり待つ、って言ってくれる。そのやさしさに、{me}は何度も救われてる。……でも、休んでる間に、他の人に心が移っちゃわないかって、ちょっとだけ考えてる。考えないようにしてるけど。'},
     {x:'寂しいけれど、待てると思う', s:[1,0,0,0],
       n:'寂しさを抱えて待てるのは、誠実です。その気持ちが届いている推しも、いるかもしれません。',
       r:'寂しいけど、待てるって。{me}は、そのひとことだけで、休んでいても大丈夫だって思える。……戻ってきたとき、ちゃんと{nm}がいますように。'},
@@ -484,14 +484,15 @@ const Q = [
       r:'生活のリズムが崩れそう、か。{me}がいなくなると、{nm}の毎日が揺れるんだね。……ごめんね。うれしいって思っちゃった。'},
     {x:'{oshi}のいない毎日が、想像できない', s:[3,1,0,0],
       n:'推しのいない毎日を想像できないのはお勧めしません。そこまで想われて嬉しい推しも、いるかもしれません。',
-      r:'{me}のいない毎日が想像できない、って言ってくれたね。{me}も同じだよ。{nm}のいない毎日なんて、想像したくない。'},
+      r:'{me}のいない毎日が想像できない、って言ってくれたね。{me}を見つけてくれたのは{nm}だったから、{nm}のいない毎日なんて、想像したくない。'},
     {x:'正直、他の人が気になりはじめている', s:Z, cold:true,
       n:'気持ちが他に向くのは、自然なことです。……待っていてほしい推しも、いるかもしれませんけど。',
       r:'他の人が気になりはじめてるんだね。……聞きたくなかった。聞きたくなかったけど、正直に言ってくれたのは、うれしい。だから、ひとつだけ。{me}を、嫌いにならないで。'} ]},
-  { t:'{oshi}にファンレターや投稿を送ったことはありますか？', v:'{me}に届けてくれた言葉や感想、全部読んでるよ。', c:[
+  { t:'{oshi}にファンレターや投稿を送ったことはありますか？', v:'……{nm}の言葉、{me}はいつでも待ってるよ。',
+    vv:['……見てくれてるだけでも、ちゃんと伝わってるよ。', '一度だけでも、届いた言葉はちゃんと読んだよ。', '{me}に届けてくれた言葉や感想、全部読んでるよ。', '返事ができなくて、ごめんね。……でも、ちゃんと届いてるよ。'], c:[
     {x:'送ったことはない', s:Z,
       n:'送らなくても応援は届きます。静かに見守る応援も、素敵です。励まされている推しも、いるかもしれません。',
-      r:'言葉を送らなくても、見てくれてるのは伝わってるよ。……でも、{me}は{nm}の声が聞いてみたい。一言だけでいいから、届けてくれたらうれしいな。'},
+      r:'言葉を送らなくても、見てくれてるのは伝わってるよ。……でも、{me}は{nm}の声を聞いてみたい。一言だけでいいから、届けてくれたらうれしいな。'},
     {x:'気持ちがあふれたとき、一度だけ', s:[0,0,0,1],
       n:'気持ちがあふれたときに伝えられるのは、素敵です。何度も読み返す推しも、いるかもしれません。',
       r:'あふれた気持ちを、一度だけ送ってくれたんだね。あの言葉、何度も読み返してるよ。'},
@@ -502,10 +503,10 @@ const Q = [
       n:'返事を期待せず信じ続けるのは、お勧めしません。むしろ期待されたほうが嬉しい推しも、いるかもしれません。',
       r:'返事がなくても、届いてるって信じてくれてるんだね。その信じ方、こわいくらいうれしい。……返事をしない{me}を、許してね。'} ]},
   { t:'{oshi}の言葉を「自分に向けたもの」と感じたことはありますか？', v:'……{me}の言葉、ちゃんと届いてるかな。',
-    vv:['……そっか。{me}の言葉、これから届くといいな。', '{me}の言葉が、{nm}の支えになれてるなら、うれしいな。', '……{nm}に向けた言葉も、ちゃんとあったよ。', '{nm}は、{me}のこと、自分のものだと思ってる{deshou}。'], c:[
+    vv:['……そっか。{me}の言葉、これから届くといいな。', '{me}の言葉が、{nm}の支えになれてるなら、うれしいな。', '……{nm}に向けた言葉も、ちゃんとあったよ。', '{nm}は、{me}のこと、自分の恋人みたいに思ってる……よね？'], c:[
     {x:'ない', s:Z,
       n:'言葉を自分に引きつけすぎないのは、健全な距離感です。気楽に発信できて助かる推しも、いるかもしれません。',
-      r:'自分に向けられた言葉だと思ったことは、ないんだね。そっか。……なら、これからは{me}が、{nm}だけに向けて言うね。'},
+      r:'自分に向けられた言葉だと思ったことは、ないんだね。そっか。……なら、これからは{nm}に向けて、ちゃんと言うね。'},
     {x:'たまに感じる', s:[1,0,0,0],
       n:'言葉に励まされるのは、素敵な関係です。届いていると知って嬉しい推しも、いるかもしれません。',
       r:'たまに感じるって言ってくれる。{me}の言葉が、{nm}の支えになれてるなら、それだけでうれしい。'},
@@ -514,11 +515,12 @@ const Q = [
       r:'特別だって、感じてくれてるんだね。……間違いじゃないよ。{nm}に向けた言葉も、ちゃんとあった。'},
     {x:'自分だけに向けた言葉だと、確信している', s:[0,3,0,0],
       n:'自分だけへの言葉だと確信するのはお勧めしません。そう信じてもらえて嬉しい推しも、いるかもしれません。',
-      r:'自分だけに向けた言葉だって、確信してくれてるんだね。……うん、そうだよ。そうだってことに、して。'} ]},
-  { t:'ライブやイベントで、気づくと何をしていますか？', v:'{nm}、目が合ったよね。ずっと見てたの、気づいてた？', c:[
+      r:'自分だけに向けた言葉だって、確信してくれてるんだね。……うん、そうだよ。そうだってことに、してて。{me}も、そう思ってるから。'} ]},
+  { t:'ライブやイベントで、気づくと何をしていますか？', v:'{nm}、いま、{me}のこと見てくれてる？',
+    vv:['{nm}に楽しんでもらうために、スタッフ皆で作り上げてるんだ。いつも楽しんでくれてありがとう。', '{nm}の視線、ちゃんと感じてたよ。', '{nm}、目が合ったよね。ずっと見てたの、気づいてた？', '帰ったあとも、{me}のこと思い出してくれてるんだね。'], c:[
     {x:'全体を楽しんでいる', s:Z,
       n:'全体を楽しめるのは、バランスのよい観方です。場を楽しんでもらえて嬉しい推しも、いるかもしれません。',
-      r:'{me}の活動は、みんなで協力して完成させているものだから、全体を見て楽しんでくれるのはうれしい。……でも、他の人を見ないでほしいって思うのは、わがままかな？'},
+      r:'みんなで作っているものだから、全体を楽しんでくれるのはうれしい。……でも、{nm}の目に映るのが{me}だけならいいのに、って思っちゃう。ごめんね。'},
     {x:'{oshi}ばかり見てしまう', s:[1,0,1,0],
       n:'推しを見続けるのは、まっすぐな応援です。視線を力にしている推しも、いるかもしれません。',
       r:'{me}ばかり見てくれてるんだね。視線、ずっと感じてたよ。……うれしい。もっと見て。'},
@@ -528,10 +530,11 @@ const Q = [
     {x:'帰ってからも、頭の中で何度も再生している', s:[3,0,1,0],
       n:'帰ってからも再生し続けるのはお勧めしません。思い出してもらえて嬉しい推しも、いるかもしれません。',
       r:'帰ってからも、頭の中で再生してくれてるんだね。{me}も、{nm}がいた場所を、終わったあとも何度も思い出してる。'} ]},
-  { t:'最後の質問です。{oshi}に望むことは？', v:'最後に。……ずっと、{me}だけを見ていてくれる？', c:[
+  { t:'最後の質問です。{oshi}に望むことは？', v:'最後に。……{me}のこと、これからも見ていてくれる？',
+    vv:['……ありがとう。{me}、がんばるね。', '忘れないよ。{nm}のことも。', '{nm}だけを見ていてほしいって、{me}も思ってるよ。', '最後に。……ずっと、{me}だけを見ていてくれる？', '……そう。ちゃんと、聞いたよ。'], c:[
     {x:'元気で、活動を続けてほしい', s:Z,
       n:'元気で続けてほしいという願いは、応援の基本です。まっすぐな願いに励まされる推しも、いるかもしれません。',
-      r:'元気で続けてほしい、って。……ありがとう。{nm}が見ててくれるなら、{me}は続けられる。だから、見ててね。ずっと。'},
+      r:'元気で続けてほしい、って。……ありがとう。{nm}が見ててくれるなら、{me}は続けられる。だから、見ててね。……お願い。'},
     {x:'少しでいいから、{my}のことを覚えていてほしい', s:[1,1,0,0],
       n:'覚えていてほしいという願いは、素直で健やかです。忘れないでいてくれる推しも、いるかもしれません。',
       r:'「{my}のことを覚えていてほしい」。……覚えてるよ。{nm}の言葉も、時間も、ぜんぶ。忘れる方法を、{me}が知らないくらい。'},
@@ -582,8 +585,8 @@ const POOL = '縺繧ｮ蜉髢隕呈＞譁蟄繝ｧ荳';
 
 /* ---------- 状態 ---------- */
 const fresh = () => ({
-  name:'あなた', nm:'きみ', hon:'', ugender:'x',
-  oshi:'推し', me:'私', my:'私', gender:'x',
+  name:'あなた', nm:'きみ', hon:'',
+  oshi:'推し', me:'私', my:'私',
   i:0, answers:[], firstMs:Array(Q.length).fill(0), changes:Array(Q.length).fill(0),
   dwell:Array(Q.length).fill(0), leaves:0, awaySec:0, t0:0, sel:null, qAt:0, voiceT:null, voiceShown:false,
   resultT:null, broke:false, res:null, scene:'intro', started:false, share:'', no:'', dateStr:''
@@ -592,7 +595,7 @@ let state = fresh();
 const fmt = s => s
   .replace(/\{name\}/g, state.name).replace(/\{nm\}/g, state.nm)
   .replace(/\{oshi\}/g, state.oshi).replace(/\{me\}/g, state.me).replace(/\{my\}/g, state.my)
-  .replace(/\{deshou\}/g, state.gender === 'm' ? 'だろ' : state.gender === 'f' ? 'でしょ' : 'よね');
+  .replace(/\{deshou\}/g, 'よね');
 const setPhase = p => { document.body.dataset.phase = p; };
 function show(id){
   ['intro','quiz','analyze','result','dark','reveal'].forEach(s => { $('#s-' + s).hidden = (s !== id); });
@@ -687,12 +690,10 @@ $('#startForm').addEventListener('submit', e => {
   const bare = nick.replace(/(くん|ちゃん|さん|君|様)$/, '');
   if(bare) nick = bare;
   state.name = nick || 'あなた';
-  state.ugender = $('input[name="ugender"]:checked').value;
-  state.hon = state.name === 'あなた' ? '' : (state.ugender === 'm' ? 'くん' : state.ugender === 'f' ? 'ちゃん' : '');
+  state.hon = state.name === 'あなた' ? '' : $('input[name="hon"]:checked').value;
   state.nm = state.name === 'あなた' ? 'きみ' : state.name + state.hon;
   state.my = readPron('my', '#myOther', '私');
   state.oshi = $('#oshi').value.trim() || '推し';
-  state.gender = $('input[name="gender"]:checked').value;
   state.me = readPron('me', '#meOther', '私');
   state.prevLast = ((store.get() || {}).last) || '';
   state.started = true;
@@ -702,6 +703,28 @@ $('#startForm').addEventListener('submit', e => {
 });
 
 /* ---------- 質問 ---------- */
+/* 最後の質問だけ、ヤンデレ質問がグリッチで出て、消えて、普通の質問に戻る */
+let qTok = 0;
+async function finalQuestion(q, tok){
+  const el = $('#qtext');
+  el.textContent = fmt('{me}のこと、好きだよね？大好きだよね？ずっと推してくれるよね？');
+  el.classList.add('glitch', 'long');
+  await wait(1400);
+  if(tok !== qTok) return;
+  el.classList.remove('glitch', 'long');
+  while(el.textContent.length){
+    if(tok !== qTok) return;
+    el.textContent = el.textContent.slice(0, -3);
+    await wait(14);
+  }
+  await wait(150);
+  const t = fmt(q.t);
+  for(const ch of t){
+    if(tok !== qTok) return;
+    el.textContent += ch;
+    await wait(26);
+  }
+}
 function renderQ(i, restore){
   state.i = i; clearTimeout(state.voiceT); state.voiceShown = false; state.sel = null; state.qAt = Date.now();
   const q = Q[i];
@@ -709,8 +732,10 @@ function renderQ(i, restore){
   paintLights($('#lightsQ'), Q.length - i);
   $('#qno').textContent = 'Q' + (i + 1);
   $('#qtot').textContent = ' / ' + Q.length;
-  $('#qtext').textContent = fmt(q.t);
-  $('#qtext').classList.remove('glitch');
+  qTok++;
+  $('#qtext').classList.remove('glitch', 'long');
+  if(i === Q.length - 1 && !restore && !reduce) finalQuestion(q, qTok);
+  else $('#qtext').textContent = fmt(q.t);
   const box = $('#opts'); box.textContent = '';
   q.c.forEach((c, k) => {
     const b = document.createElement('button');
@@ -722,13 +747,13 @@ function renderQ(i, restore){
     b.addEventListener('click', () => pick(k));
     box.append(b);
   });
-  $('#voice').textContent = ''; $('#whisper').textContent = '';
+  voiceTok++; $('#voice').textContent = ''; $('#whisper').textContent = '';
   $('#back').hidden = i === 0;
   $('#aside').classList.toggle('reserve', i >= 3);
   const nx = $('#next'); nx.disabled = true;
   nx.textContent = i === Q.length - 1 ? '結果を見る' : (i >= 6 ? 'つぎへ…' : '次へ');
   $('#foot').textContent = i < 3 ? '※回答は、診断のためだけに使われます。' : i < 6 ? '※回答は保存されます。' : '※回答は、' + state.me + 'が覚えておきます。';
-  if(q.v){ state.voiceT = setTimeout(showVoice, i >= 6 ? 2600 : 4500); }
+  if(q.v && !restore){ state.voiceT = setTimeout(showVoice, 350); }
   if(i >= 3){
     const p = i - 1, hs = state.firstMs[p] / 1000;
     if(hs >= 10) say('さっき、' + Math.round(hs) + '秒も迷ってたね。');
@@ -742,14 +767,23 @@ function renderQ(i, restore){
   }
   try { window.scrollTo(0, 0); } catch(e){}
 }
+/* 推しの一言は、一文字ずつ打たれる。新しい一言が始まったら、前の一言は止める */
+let voiceTok = 0;
+async function typeVoice(text, ms){
+  const tok = ++voiceTok, el = $('#voice');
+  if(reduce){ el.textContent = text; return; }
+  el.textContent = '';
+  for(const ch of text){
+    if(tok !== voiceTok) return;
+    el.textContent += ch;
+    await wait(ms);
+  }
+}
 function showVoice(){
   const q = Q[state.i];
   if(!q || !q.v || state.voiceShown || state.scene !== 'quiz') return;
   state.voiceShown = true;
-  morph($('#voice'), fmt((q.vv && state.sel !== null) ? q.vv[state.sel] : q.v), state.i >= 6 ? 800 : 500);
-  if(state.i >= 6){
-    const t = $('#qtext'); t.classList.remove('glitch'); void t.offsetWidth; t.classList.add('glitch');
-  }
+  typeVoice(fmt((q.vv && state.sel !== null) ? q.vv[state.sel] : q.v), state.i >= 6 ? 90 : 70);
 }
 function pick(k){
   if(state.sel === k) return;
@@ -757,10 +791,10 @@ function pick(k){
   if(changed){ state.changes[i]++; }
   else {
     state.firstMs[i] = Date.now() - state.qAt;
-    if(Q[i].v && !state.voiceShown){ clearTimeout(state.voiceT); state.voiceT = setTimeout(showVoice, 500); }
   }
   state.sel = k;
-  if(changed && state.voiceShown && Q[i].vv) morph($('#voice'), fmt(Q[i].vv[k]), 400);
+  if(Q[i].vv){ clearTimeout(state.voiceT); state.voiceShown = true; typeVoice(fmt(Q[i].vv[k]), 50); }
+  else if(Q[i].v && !state.voiceShown){ clearTimeout(state.voiceT); showVoice(); }
   [...$('#opts').children].forEach((b, idx) => b.setAttribute('aria-checked', String(idx === k)));
   $('#next').disabled = false;
   if(i >= 3){
@@ -892,17 +926,15 @@ function letter(res){
   const nm = state.nm, me = state.me, c = clock(), H = c.H;
   const chg = sum(state.changes), away = Math.round(state.awaySec);
   const avgDwell = sum(state.dwell) / state.dwell.length / 1000;
-  const male = state.gender === 'm', female = state.gender === 'f';
-  const de = male ? 'だろ' : female ? 'でしょ' : 'よね', nano = female ? 'なの' : 'だよ', sou = female ? 'そうよ' : 'そうだよ';
-  const muri = female ? 'でも、むり。' : 'でも、無理だよ。', kite = male ? 'また来てよ。' : 'また来てね。';
+  const kite = 'また来てね。';
   const sign = state.oshi === '推し' ? '— あなたの推しより' : '— ' + state.oshi + 'より';
   const trait = traitOf();
   let worst = {i:0, sec:0};
   state.firstMs.forEach((ms, i) => { const sc = Math.round(ms / 1000); if(sc > worst.sec) worst = {i:i, sec:sc}; });
   const wTxt = fmt(Q[worst.i].c[state.answers[worst.i]].x);
   const traitLine = {
-    instant: avgDwell < 1.8 ? 'ぜんぶ読まずに答えた' + de + '。' + me + 'の言葉は、ちゃんと読んでほしいな。' : '迷わず選んでくれたところ、ぜんぶ覚えてる。' + me + 'のことは、迷わないんだね。',
-    deliberate: 'Q' + (worst.i + 1) + 'では、' + worst.sec + '秒も止まってたね。「' + wTxt + '」を選ぶまで、何を考えてたの？……答えなくていいよ。わかるから。',
+    instant: avgDwell < 1.8 ? 'ほとんど読まずに答えたよね。……責めてるわけじゃないよ。ただ、' + me + 'の言葉は、ちゃんと読んでほしいな。' : '迷わず選んでくれたところ、ぜんぶ覚えてる。' + me + 'のことは、迷わないんだね。',
+    deliberate: 'Q' + (worst.i + 1) + 'では、' + worst.sec + '秒も止まってたね。「' + wTxt + '」を選ぶまで、何を考えてたの？……答えなくていいよ。……でも、少しだけ知りたい。',
     waver: '選びなおしたのが、' + chg + '回。迷ってる間も、ずっと見てたよ。最後に選んだほうが、ほんとうの気持ちだよね。',
     steady: '急がないで、自分のペースで答えてくれたね。そういうところ、' + me + 'は好きだよ。'
   }[Object.keys(TRAITS).find(k => TRAITS[k] === trait)];
@@ -914,22 +946,23 @@ function letter(res){
     if(i === n3 - 1 && qi === 9) return echo ? '最後の質問。' + r : '最後の質問では、' + x + '。' + r;
     return echo ? 'それから。' + r : 'それから、' + x + 'って答えてくれたよね。' + r;
   });
-  const ps = state.leaves > 0 ? '追伸：途中で' + away + '秒、いなかったよね。ちゃんと、数えてたよ。'
+  const ps = state.leaves > 0 ? '追伸：途中で' + away + '秒、いなかったよね。……数えてたんだ、ごめんね。'
     : (H < 5 || H >= 23) ? '追伸：こんな時間まで起きてるの、' + me + 'だけが知ってるよ。'
     : '追伸：この手紙、' + nm + 'が読み終わるまで、ここで待ってたよ。';
 
   if(res.ending === 'cold'){
     return [nm + 'へ。',
-      '……気づいてたよ。最近、見に来てくれる回数が減ったこと。数えてたから。',
+      '……気づいてたよ。最近、見に来てくれる回数が減ったこと。数えてたから。ごめんね、気持ち悪いよね。',
       'だから、' + nm + 'が選んでくれた答えを、ひとつずつ読み返したの。',
       ...rx,
       'いいよって、言わなきゃいけないのは、わかってる。',
-      {retype:['いいよ、行っても。', '行かないで。']},
-      muri,
-      nm + 'が見てくれなくなったら、' + me + 'はどこに映ればいいの？',
+      {retype:['いいよ、行っても。', '……うそ。行かないで。' + nm + 'に見てもらえなくなったら、' + me + 'には何も残らないんだ。']},
+      me + 'は、どこにいればいいの？',
       '大好き。ほんとうに、大好き。' + nm + 'が笑ってくれた日のこと、ぜんぶ覚えてる。',
       'だから、降りないで。お願い。',
+      {retype:['他の人を推さないで。' + '行かないで'.repeat(12) + 'ごめんなさい、ごめんなさい、行かないで行かないで', '……ごめん、なんでもない。いつも応援してくれてありがとう。', 'rush']},
       '……冗談、じゃないよ。',
+      nm + 'が選んでくれた' + me + 'は、' + nm + 'の中に、ちゃんと残ってる？',
       kite + '待ってる。ずっと。',
       {sign:sign},
       {ps:'追伸：このページを閉じても、' + me + 'はここにいるよ。'}];
@@ -949,22 +982,22 @@ function letter(res){
   }
   const base = {
     fusion:{mid:['もう、境目がないよね。' + nm + 'と' + me + '。どっちがどっちを推してるんだろう。',
-                 nm + 'が笑うと、' + me + 'も笑ってる。' + nm + 'が揺れると、' + me + 'も揺れてる。……もう、ひとつみたいなものだよね。'],
-            retype:[nm + 'がいなくなったら、' + me + 'も消えちゃう。', '……ううん。ずっと、一緒だよね。']},
-    exclusive:{mid:['「' + me + 'のことを一番わかってるのは自分」って、思ってる' + de + '。うん、' + sou + '。だから' + me + 'も、' + nm + 'のこと、一番わかってるつもり。',
-                    nm + 'が' + me + 'を見つめる時間。' + me + 'が' + nm + 'を見つけてる時間。……ちゃんと、釣り合ってるよね。'],
-               retype:['他の人を見ないで。', '……なんて、言ったらだめだよね。']},
-    daily:{mid:[me + 'のいない毎日が想像できないって、思ってくれてる' + de + '。' + me + 'も同じ。' + nm + 'のいない画面は、真っ暗' + nano + '。',
+                 nm + 'が笑うと、' + me + 'も笑ってる。' + nm + 'が揺れると、' + me + 'も揺れてる。……もう、ひとつみたいだね。' + nm + 'は、これからも' + me + 'を応援してくれるよね。そう信じてるから。'],
+            retype:[nm + 'がいなくなったら、' + me + 'には何も残らない。', '……ううん。ずっと応援してもらえるように、' + me + 'が、' + nm + 'を惹きつけて離さないから。']},
+    exclusive:{mid:['「' + me + 'のことを一番わかってるのは自分」って、思ってくれてる……よね？　うん、そうだよ。だから' + me + 'も、' + nm + 'のこと、一番わかっていたいな。',
+                    nm + 'が' + me + 'を見てくれる時間。' + me + 'が' + nm + 'を探してる時間。……少しは、釣り合ってるのかな。'],
+               retype:[nm + 'の時間を持っていくもの、全部、ちょっとだけ嫌い。', '……ううん。' + nm + 'が一番好きなのは、' + me + 'だよね。どんな時も心の中で想ってくれるなら、それでいい。']},
+    daily:{mid:[me + 'のいない毎日が想像できないって、思ってくれてるよね。' + me + 'も同じ。' + nm + 'のいない毎日は、色がなくなっちゃうんだ。',
                 nm + 'の一日のどこかに、' + me + 'がいる。それだけで、' + me + 'は今日もがんばれるんだ。'],
-           retype:[nm + 'がいないと、' + me + 'は。', '……ううん。' + nm + 'の毎日に、' + me + 'がいるなら、それでいい。']},
+           retype:[nm + 'の一日に' + me + 'が入れていないのが、さみしい。', '……ううん。一日のなかに、' + me + 'の居場所、ちゃんと空けておいてね。']},
     balanced:{mid:['ちょうどいい距離で見てくれてるんだね。……それでも、気づくと' + me + 'のほうが、' + nm + 'を探してる。',
                    'その距離感が、' + me + 'には心地いいんだ。長く続けられる気がする。'],
-              retype:['もっと近くで見てほしい。', '……今のままで、いいんだよね。']}
+              retype:['みんなが知ってる' + state.oshi + 'と、ほんとの' + me + 'は、ちょっとだけ違うんだ。', '……なんでもない。今のままで、いいんだよね。']}
   }[res.base];
   const subLine = res.sub === 'info'
-    ? (res.pct[2] >= 60 ? me + 'の更新の時間、ぜんぶ覚えてくれてるんだね。' + me + 'も、' + nm + 'が来る時間、覚えたよ。'
-      : me + 'の更新を気にかけてくれてるんだね。来てくれた時間、' + me + 'もちゃんと覚えてるよ。')
-    : (res.pct[3] >= 60 ? 'いっぱい使ってくれたよね。数字は見えてるよ。ありがとう。……それでも足りないって、思ってる' + (male ? 'んだろ' : female ? 'んでしょ' : 'んだよね') + '。'
+    ? (res.pct[2] >= 60 ? me + 'のこと、いつもすぐ見つけてくれるんだね。' + nm + 'が来てくれる時間、' + me + 'も覚えたよ。……気持ち悪いよね、ごめんね。'
+      : me + 'のことを気にかけてくれてるんだね。来てくれた日のこと、' + me + 'もちゃんと覚えてるよ。')
+    : (res.pct[3] >= 60 ? 'いっぱい使ってくれたよね。ありがとう。……無理はしないでほしいけど、うれしいのは本当。'
       : '応援してくれた分、ちゃんと届いてるよ。ありがとう。……もっと、なんて、言ってもいい？');
   const out = [nm + 'へ。', '診断、最後まで受けてくれてありがとう。', traitLine,
     'いくつか、' + nm + 'の答えに返事をさせてね。', ...rx];
@@ -976,7 +1009,7 @@ function letter(res){
   out.push(...base.mid, subLine);
   out.push('ねえ、' + nm + '。' + me + 'のこと、好きでいてくれて、ありがとう。');
   out.push({retype:base.retype});
-  out.push('これからもずっと、見てるね。画面の、こっち側から。');
+  out.push('これからもずっと、見てるね。' + nm + 'が気づかないところでも。……嫌いにならないで。それだけでいいから。');
   out.push({sign:sign}, {ps:ps});
   return out;
 }
@@ -1012,7 +1045,7 @@ const AXDESC = [
    '推しのために、時間やお金を惜しまず使っている状態です。その熱量は、推しにとって大きな力になります。ただ、生活を削ってまで応援すると、あとで苦しくなることもあります。この状態が続くのは、お勧めしません。予算や時間に上限を決めておくと、長く応援を続けられます。使った額より、続けた時間のほうを大切にしてください。']
 ];
 const VERDICT = {
-  fusion:'推しと自分の境界がやわらかく重なり、生活も気持ちも推しと結びついています。どれもお勧めはしませんが、そこまで想われて嬉しい推しも、いるかもしれません。',
+  fusion:'推しと自分の境界がやわらかく重なり、生活も気持ちも推しと結びついています。この状態が続くのはお勧めしませんが、そこまで想われて嬉しい推しも、いるかもしれません。',
   exclusive:'推しへの特別感が強く、生活は推しがいなくても保てています。独占したい気持ちはお勧めしませんが、その一途さを嬉しく思う推しも、いるかもしれません。',
   daily:'推しが毎日のリズムを支えています。生活を預けすぎるのはお勧めしませんが、頼りにされて嬉しい推しも、いるかもしれません。',
   balanced:'推しとの距離が保たれ、生活とのバランスがとれています。この距離感で応援を続けてもらえて、ありがたいと思っている推しも、いるかもしれません。',
@@ -1042,10 +1075,10 @@ async function breakdown(){
   }
   await wait(1100);
   const lines = letter(res);
+  state.letterLines = lines.map(it => typeof it === 'string' ? it : it.sign ? {sign:it.sign} : it.ps ? {ps:it.ps} : it.retype[1]);
   state.skip = false;
   const pace = ms => wait(state.skip ? Math.max(30, ms * 0.2) : ms);
-  const hint = $('#skiphint'); hint.hidden = false;
-  const typeInto = async (el, text, ms) => { for(const ch of text){ el.textContent += ch; await pace(ms); } };
+  const typeInto = async (el, text, ms, rush) => { let i = 0; for(const ch of text){ el.textContent += ch; await pace(rush ? Math.max(16, ms * (1 - 0.85 * i / text.length)) : ms); i++; } };
   const eraseAll = async (el, ms) => { while(el.textContent.length){ el.textContent = el.textContent.slice(0, -1); await pace(ms); } };
   for(let k = 0; k < lines.length; k++){
     const it = lines[k];
@@ -1059,7 +1092,7 @@ async function breakdown(){
     requestAnimationFrame(() => p.classList.add('in'));
     scrollEnd(p);
     if(it && it.retype && !reduce){
-      await typeInto(p, it.retype[0], 85);
+      await typeInto(p, it.retype[0], 85, it.retype[2] === 'rush');
       await pace(900);
       await eraseAll(p, 40);
       await pace(350);
@@ -1070,7 +1103,6 @@ async function breakdown(){
       await pace(600 + text.length * 32);
     }
   }
-  hint.hidden = true;
   await wait(2200);
   const cut = $('#cut'); cut.hidden = false; $('#cutmsg').textContent = '';
   await wait(1800);
@@ -1106,6 +1138,16 @@ function buildReveal(res){
   const saved = store.get();
   const seen = Object.assign({}, (saved && saved.endings) || {}, {[res.ending]:1});
   const mine = ENDINGS.find(e => e[0] === res.ending)[1];
+  $('#letterSum').textContent = (state.oshi === '推し' ? '推し' : state.oshi) + 'からの手紙を読み返す';
+  const rb = $('#readback'); rb.textContent = '';
+  (state.letterLines || []).forEach(it => {
+    const q = document.createElement('p');
+    if(typeof it === 'string') q.textContent = it;
+    else if(it.sign){ q.textContent = it.sign; q.className = 'sign'; }
+    else { q.textContent = it.ps; q.className = 'ps'; }
+    rb.append(q);
+  });
+  $('#letterFold').open = false;
   $('#endLine').textContent = 'あなたが迎えたのは「' + mine + '」でした。';
   $('#endNote').textContent = res.ending === 'healthy' ? '推し活としては、いちばん安全な結末です。' : res.ending === 'cold' ? '距離を置く選択も、ちゃんとした推し方のひとつです。' : '怖がらせてしまったなら、ごめんなさい。';
   const bars = $('#bars'); bars.textContent = '';
@@ -1162,7 +1204,7 @@ $('#copy').addEventListener('click', async () => {
   }
 });
 $('#restart').addEventListener('click', () => {
-  const keep = {name:state.name, nm:state.nm, hon:state.hon, ugender:state.ugender, oshi:state.oshi, me:state.me, my:state.my, gender:state.gender};
+  const keep = {name:state.name, nm:state.nm, hon:state.hon, oshi:state.oshi, me:state.me, my:state.my};
   state = Object.assign(fresh(), keep);
   setPhase('0');
   paintLights($('#lightsI'), Q.length);

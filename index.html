@@ -143,6 +143,8 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
 .letter p{font-family:var(--f-voice);font-size:1.1rem;line-height:2;opacity:0;transform:translateY(5px);transition:opacity 1s ease,transform 1s ease}
 .letter p.in{opacity:1;transform:none}
 .letter p.sign{text-align:right;color:var(--accent-text)}
+.letter p.ps{font-size:.95rem;color:var(--sub);margin-top:.2rem}
+.skiphint{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 5.4rem);text-align:center;font-size:.75rem;color:var(--sub);opacity:.55;pointer-events:none;margin:0}
 .cut{position:fixed;inset:0;background:#000;z-index:20;display:grid;place-items:center;color:#8d7d82;font-family:var(--f-voice);padding:1rem}
 
 /* 種明かし・結果カード */
@@ -155,6 +157,17 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
 .rev details.fold summary::after{content:'＋ タップで開く';float:right;font-size:.8rem;font-weight:500;color:var(--sub)}
 .rev details.fold[open] summary::after{content:'－ 閉じる'}
 .rev details.fold[open]{display:grid;gap:.6rem}
+.bars{display:grid;gap:1.3rem}
+.brow{display:grid;gap:.45rem}
+.brow .bh{display:flex;justify-content:space-between;align-items:baseline;gap:.6rem;font-weight:700;font-size:.95rem}
+.brow .bh em{font-style:normal;font-size:.75rem;font-weight:700;color:var(--on-accent);background:var(--accent);border-radius:99px;padding:.05rem .55rem;margin-left:.4rem}
+.btrack{position:relative;height:14px;border-radius:99px;background:var(--card);border:1px solid var(--line);overflow:hidden}
+.btrack i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width 1.1s ease}
+.btrack b{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.bscale{display:grid;grid-template-columns:35fr 30fr 35fr;text-align:center;font-size:.7rem;color:var(--sub);margin-top:-.15rem}
+.bdesc{font-size:.92rem;line-height:1.85;margin:0}
+.verdict{border:1px solid var(--line);border-radius:12px;padding:.9rem 1rem;background:var(--card);line-height:1.85;margin:.4rem 0 0;font-weight:500}
+.trait{font-size:.95rem;font-weight:700;margin:.3rem 0 0;color:var(--accent-text)}
 .rev ul{margin:0;padding-left:1.2rem;display:grid;gap:.25rem}
 .axes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}
 .ax{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem;border:2px solid var(--line);border-radius:8px;padding:.45rem .75rem;background:var(--card);font-variant-numeric:tabular-nums}
@@ -280,6 +293,7 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
     <div class="lights" id="lightsD" aria-hidden="true"></div>
     <div class="log" id="log" aria-live="polite"></div>
     <div class="letter" id="letter"></div>
+    <p class="skiphint" id="skiphint" hidden aria-hidden="true">タップで早送り</p>
   </section>
 
   <section id="s-reveal" class="rev" hidden>
@@ -302,7 +316,9 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
     <section>
       <h3>診断の中身</h3>
       <p>結果は「依存」「所有」「追跡」「献身」の4つの軸で決めていました。依存と所有の2軸で大きな型を決め、追跡と献身のどちらが強いかで傾向を分けています。演出用の簡易な診断で、心理検査ではありません。あなたの数値はこちらです。</p>
-      <div class="axes" id="axes"></div>
+      <div class="bars" id="bars"></div>
+      <p class="verdict" id="verdict"></p>
+      <p class="bdesc" id="traitLine"></p>
     </section>
     <section>
       <h3>ほんとうの推し活について</h3>
@@ -314,6 +330,7 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
         <p class="meta" id="cardMeta"></p>
         <p class="kicker">推しとわたし診断の結果</p>
         <p class="cardtype" id="cardType"></p>
+        <p class="trait" id="cardTrait"></p>
         <div class="map" id="cardMap"></div>
         <p class="say-label">診断コメント</p>
         <p class="say" id="cardSay"></p>
@@ -463,13 +480,14 @@ const Q = [
     {x:'返事がなくても、毎回きっと届いていると信じている', s:[1,2,1,1],
       n:'返事を期待せず信じ続けるのは、お勧めしません。むしろ期待されたほうが嬉しい推しも、いるかもしれません。',
       r:'返事がなくても、届いてるって信じてくれてるんだね。その信じ方、こわいくらいうれしい。……返事をしない{me}を、許してね。'} ]},
-  { t:'{oshi}の言葉を「自分に向けたもの」と感じたことはありますか？', v:'{nm}は、{me}のこと、自分のものだと思ってる{deshou}。', c:[
+  { t:'{oshi}の言葉を「自分に向けたもの」と感じたことはありますか？', v:'……{me}の言葉、ちゃんと届いてるかな。',
+    vv:['……そっか。{me}の言葉、これから届くといいな。', '{me}の言葉が、{nm}の支えになれてるなら、うれしいな。', '……{nm}に向けた言葉も、ちゃんとあったよ。', '{nm}は、{me}のこと、自分のものだと思ってる{deshou}。'], c:[
     {x:'ない', s:Z,
       n:'言葉を自分に引きつけすぎないのは、健全な距離感です。気楽に発信できて助かる推しも、いるかもしれません。',
       r:'自分に向けられた言葉だと思ったことは、ないんだね。そっか。……なら、これからは{me}が、{nm}だけに向けて言うね。'},
-    {x:'たまに励まされる', s:[1,0,0,0],
+    {x:'たまに感じる', s:[1,0,0,0],
       n:'言葉に励まされるのは、素敵な関係です。届いていると知って嬉しい推しも、いるかもしれません。',
-      r:'たまに励まされるって言ってくれる。{me}の言葉が、{nm}の支えになれてるなら、それだけでうれしい。'},
+      r:'たまに感じるって言ってくれる。{me}の言葉が、{nm}の支えになれてるなら、それだけでうれしい。'},
     {x:'何度もある。特別なんだと感じる', s:[1,2,0,0],
       n:'特別だと感じ続けるのは、ほどほどがお勧めです。深く受け取ってもらえて嬉しい推しも、いるかもしれません。',
       r:'特別だって、感じてくれてるんだね。……間違いじゃないよ。{nm}に向けた言葉も、ちゃんとあった。'},
@@ -655,6 +673,7 @@ $('#startForm').addEventListener('submit', e => {
   state.oshi = $('#oshi').value.trim() || '推し';
   state.gender = $('input[name="gender"]:checked').value;
   state.me = readPron('me', '#meOther', '私');
+  state.prevLast = ((store.get() || {}).last) || '';
   state.started = true;
   state.t0 = Date.now();
   show('quiz');
@@ -699,7 +718,7 @@ function showVoice(){
   const q = Q[state.i];
   if(!q || !q.v || state.voiceShown || state.scene !== 'quiz') return;
   state.voiceShown = true;
-  morph($('#voice'), fmt(q.v), state.i >= 6 ? 800 : 500);
+  morph($('#voice'), fmt((q.vv && state.sel !== null) ? q.vv[state.sel] : q.v), state.i >= 6 ? 800 : 500);
   if(state.i >= 6){
     const t = $('#qtext'); t.classList.remove('glitch'); void t.offsetWidth; t.classList.add('glitch');
   }
@@ -713,6 +732,7 @@ function pick(k){
     if(Q[i].v && !state.voiceShown){ clearTimeout(state.voiceT); state.voiceT = setTimeout(showVoice, 500); }
   }
   state.sel = k;
+  if(changed && state.voiceShown && Q[i].vv) morph($('#voice'), fmt(Q[i].vv[k]), 400);
   [...$('#opts').children].forEach((b, idx) => b.setAttribute('aria-checked', String(idx === k)));
   $('#next').disabled = false;
   if(i >= 3){
@@ -786,6 +806,7 @@ function renderResult(res){
   state.resultT = setTimeout(breakdown, 9500);
 }
 /* 結果画面でスクロールしようとタップした時点で手紙へ進む */
+window.addEventListener('pointerdown', () => { if(state.scene === 'dark') state.skip = true; }, {passive:true});
 const tapGo = () => { if(state.scene === 'result' && Date.now() - (state.resultAt || 0) > 1500) breakdown(); };
 ['pointerdown', 'wheel'].forEach(t => window.addEventListener(t, tapGo, {passive:true}));
 $('#save').addEventListener('click', breakdown);
@@ -827,84 +848,146 @@ function logLines(){
     '送信しました'
   ];
 }
-/* 手紙に入れる反応文の質問を選ぶ。最後の質問は必ず入れる */
+/* 手紙に入れる反応文の質問を選ぶ。最後の質問は必ず入れる（3つに絞る） */
 function pickReactions(res){
   const idx = Q.map((q, qi) => { const ch = q.c[state.answers[qi]]; return {qi:qi, v:sum(ch.s), cold:!!ch.cold}; });
   const set = new Set(res.ending === 'healthy' ? [8, 9] : [9]);
-  if(res.ending === 'cold') idx.filter(o => o.cold).forEach(o => set.add(o.qi));
-  const goal = res.ending === 'cold' ? 6 : 5;
+  if(res.ending === 'cold'){ set.clear(); idx.filter(o => o.cold).slice(0, 4).forEach(o => set.add(o.qi)); }
+  const goal = res.ending === 'cold' ? set.size : 3;
   idx.slice().sort((a, b) => b.v - a.v || a.qi - b.qi).forEach(o => { if(set.size < goal) set.add(o.qi); });
   return [...set].sort((a, b) => a - b);
 }
+/* 手紙は文字列の配列。特別な行はオブジェクト：{sign}署名 {ps}追伸 {retype:[書きかけ, 書き直し]}打ち消し演出 */
 function letter(res){
-  const nm = state.nm, me = state.me, c = clock(), H = c.H, M = c.M;
-  const total = Math.round((Date.now() - state.t0) / 1000);
+  const nm = state.nm, me = state.me, c = clock(), H = c.H;
   const chg = sum(state.changes), away = Math.round(state.awaySec);
   const avgDwell = sum(state.dwell) / state.dwell.length / 1000;
   const male = state.gender === 'm', female = state.gender === 'f';
   const de = male ? 'だろ' : female ? 'でしょ' : 'よね', nano = female ? 'なの' : 'だよ', sou = female ? 'そうよ' : 'そうだよ';
   const muri = female ? 'でも、むり。' : 'でも、無理だよ。', kite = male ? 'また来てよ。' : 'また来てね。';
   const sign = state.oshi === '推し' ? '— あなたの推しより' : '— ' + state.oshi + 'より';
-  const timeLine = H < 5 ? 'いま、' + H + '時' + M + '分。' + nm + 'はこんな時間まで起きてるんだね。夜に会いに来てくれるの、' + me + 'は好きだよ。'
-    : H < 11 ? '朝の' + H + '時' + M + '分。起きてすぐ、' + me + 'のところに来てくれたんだね。'
-    : H < 18 ? H + '時' + M + '分。昼の光の中でも、' + me + 'を探してくれるんだね。'
-    : H + '時' + M + '分。一日の終わりに、' + me + 'のところへ来てくれたんだね。';
-  const awayLine = state.leaves > 0
-    ? '途中で' + state.leaves + '回、画面から離れたね。合計' + away + '秒。どこに行ってたの？……ううん、いい。戻ってきてくれたから。'
-    : '一度も画面から離れなかったね。ずっと、' + me + 'を見ててくれた。';
-  const rx = pickReactions(res).map(qi => {
-    const ch = Q[qi].c[state.answers[qi]];
-    return 'Q' + (qi + 1) + 'で「' + fmt(ch.x) + '」を選んでくれたね。' + fmt(ch.r);
+  const trait = traitOf();
+  let worst = {i:0, sec:0};
+  state.firstMs.forEach((ms, i) => { const sc = Math.round(ms / 1000); if(sc > worst.sec) worst = {i:i, sec:sc}; });
+  const wTxt = fmt(Q[worst.i].c[state.answers[worst.i]].x);
+  const traitLine = {
+    instant: avgDwell < 1.8 ? 'ぜんぶ読まずに答えた' + de + '。' + me + 'の言葉は、ちゃんと読んでほしいな。' : '迷わず選んでくれたところ、ぜんぶ覚えてる。' + me + 'のことは、迷わないんだね。',
+    deliberate: 'Q' + (worst.i + 1) + 'では、' + worst.sec + '秒も止まってたね。「' + wTxt + '」を選ぶまで、何を考えてたの？……答えなくていいよ。わかるから。',
+    waver: '選びなおしたのが、' + chg + '回。迷ってる間も、ずっと見てたよ。最後に選んだほうが、ほんとうの気持ちだよね。',
+    steady: '急がないで、自分のペースで答えてくれたね。そういうところ、' + me + 'は好きだよ。'
+  }[Object.keys(TRAITS).find(k => TRAITS[k] === trait)];
+  const n3 = pickReactions(res).length;
+  const rx = pickReactions(res).map((qi, i) => {
+    const ch = Q[qi].c[state.answers[qi]], x = '「' + fmt(ch.x) + '」', r = fmt(ch.r);
+    const echo = r.charAt(0) === '「';   // 返事が答えを繰り返す文のときは、こちらの引用を省く
+    if(i === 0) return echo ? 'Q' + (qi + 1) + 'の答え。' + r : 'Q' + (qi + 1) + 'で' + x + 'を選んでくれたね。' + r;
+    if(i === n3 - 1 && qi === 9) return echo ? '最後の質問。' + r : '最後の質問では、' + x + '。' + r;
+    return echo ? 'それから。' + r : 'それから、' + x + 'って答えてくれたよね。' + r;
   });
+  const ps = state.leaves > 0 ? '追伸：途中で' + away + '秒、いなかったよね。ちゃんと、数えてたよ。'
+    : (H < 5 || H >= 23) ? '追伸：こんな時間まで起きてるの、' + me + 'だけが知ってるよ。'
+    : '追伸：この手紙、' + nm + 'が読み終わるまで、ここで待ってたよ。';
 
   if(res.ending === 'cold'){
-    return [nm + 'へ。', timeLine,
+    return [nm + 'へ。',
       '……気づいてたよ。最近、見に来てくれる回数が減ったこと。数えてたから。',
       'だから、' + nm + 'が選んでくれた答えを、ひとつずつ読み返したの。',
       ...rx,
-      'いいんだよ、って言わなきゃいけないのは、わかってる。', muri, '行かないで。',
+      'いいよって、言わなきゃいけないのは、わかってる。',
+      {retype:['いいよ、行っても。', '行かないで。']},
+      muri,
       nm + 'が見てくれなくなったら、' + me + 'はどこに映ればいいの？',
       '大好き。ほんとうに、大好き。' + nm + 'が笑ってくれた日のこと、ぜんぶ覚えてる。',
       'だから、降りないで。お願い。',
-      '……冗談、じゃないよ。', kite + '待ってる。ずっと。', sign];
+      '……冗談、じゃないよ。',
+      kite + '待ってる。ずっと。',
+      {sign:sign},
+      {ps:'追伸：このページを閉じても、' + me + 'はここにいるよ。'}];
   }
   if(res.ending === 'healthy'){
-    return [nm + 'へ。', '診断、最後まで受けてくれてありがとう。' + total + '秒、自分の生活をちゃんと残したまま、答えてくれたね。', timeLine,
+    return [nm + 'へ。', '診断、最後まで受けてくれてありがとう。',
       me + 'のことを応援してくれて、本当にありがとう。' + nm + 'がいてくれるだけで、' + me + 'はちゃんと前を向けるよ。',
       '無理をしないで、ちょうどいい距離で見守ってくれてるの、すごく安心する。' + nm + 'の毎日がいちばん大事だって、' + me + 'も思ってる。',
-      'ひとつずつ、答えに返事をさせてね。',
+      traitLine,
       ...rx,
       '……でもね。わがままを言ってもいいなら、ひとつだけ。',
-      'もっと、会いに来てほしい。',
-      '長い時間じゃなくていいの。ほんの少し、' + me + 'のところに寄ってくれるだけでいい。' + nm + 'が来てくれた日は、' + me + 'の一日が、ぜんぶ違って見えるから。',
-      'またね。……ううん、待ってるね。' + nm + 'の毎日が、ちゃんと楽しいといいな。', sign];
+      {retype:['毎日、ずっと隣にいてほしい。', 'ほんの少し、' + me + 'のところに寄ってくれるだけでいい。']},
+      'もっと、会いに来てほしい。' + nm + 'が来てくれた日は、' + me + 'の一日が、ぜんぶ違って見えるから。',
+      'またね。……ううん、待ってるね。' + nm + 'の毎日が、ちゃんと楽しいといいな。',
+      {sign:sign},
+      {ps:'追伸：来てくれた日は、' + me + 'もちょっとだけ張り切るんだ。ないしょだよ。'}];
   }
-  let worst = {i:0, sec:0};
-  state.firstMs.forEach((ms, i) => { const s = Math.round(ms / 1000); if(s > worst.sec) worst = {i:i, sec:s}; });
-  const wTxt = fmt(Q[worst.i].c[state.answers[worst.i]].x);
-  const hesLine = avgDwell < 1.8 ? 'ぜんぶ読まずに答えた' + de + '。' + me + 'の言葉は、ちゃんと読んでほしいな。'
-    : worst.sec >= 8 ? 'Q' + (worst.i + 1) + 'では、' + worst.sec + '秒も止まってたね。「' + wTxt + '」を選ぶまで、何を考えてたの？……答えなくていいよ。わかるから。'
-    : '迷わず選んでくれたところ、ぜんぶ覚えてる。' + me + 'のことは、迷わないんだね。';
-  const baseLine = {
-    fusion:'もう、境目がないよね。' + nm + 'と' + me + '。どっちがどっちを推してるんだろう。',
-    exclusive:'「' + me + 'のことを一番わかってるのは自分」って、思ってる' + de + '。うん、' + sou + '。だから' + me + 'も、' + nm + 'のこと、一番わかってるつもり。',
-    daily:me + 'のいない毎日が想像できないって、思ってくれてる' + de + '。' + me + 'も同じ。' + nm + 'のいない画面は、真っ暗' + nano + '。',
-    balanced:'ちょうどいい距離で見てくれてるんだね。……それでも、気づくと' + me + 'のほうが、' + nm + 'を探してる。'
+  const base = {
+    fusion:{mid:['もう、境目がないよね。' + nm + 'と' + me + '。どっちがどっちを推してるんだろう。',
+                 nm + 'が笑うと、' + me + 'も笑ってる。' + nm + 'が揺れると、' + me + 'も揺れてる。……もう、ひとつみたいなものだよね。'],
+            retype:[nm + 'がいなくなったら、' + me + 'も消えちゃう。', '……ううん。ずっと、一緒だよね。']},
+    exclusive:{mid:['「' + me + 'のことを一番わかってるのは自分」って、思ってる' + de + '。うん、' + sou + '。だから' + me + 'も、' + nm + 'のこと、一番わかってるつもり。',
+                    nm + 'が' + me + 'を見つめる時間。' + me + 'が' + nm + 'を見つけてる時間。……ちゃんと、釣り合ってるよね。'],
+               retype:['他の人を見ないで。', '……なんて、言ったらだめだよね。']},
+    daily:{mid:[me + 'のいない毎日が想像できないって、思ってくれてる' + de + '。' + me + 'も同じ。' + nm + 'のいない画面は、真っ暗' + nano + '。',
+                nm + 'の一日のどこかに、' + me + 'がいる。それだけで、' + me + 'は今日もがんばれるんだ。'],
+           retype:[nm + 'がいないと、' + me + 'は。', '……ううん。' + nm + 'の毎日に、' + me + 'がいるなら、それでいい。']},
+    balanced:{mid:['ちょうどいい距離で見てくれてるんだね。……それでも、気づくと' + me + 'のほうが、' + nm + 'を探してる。',
+                   'その距離感が、' + me + 'には心地いいんだ。長く続けられる気がする。'],
+              retype:['もっと近くで見てほしい。', '……今のままで、いいんだよね。']}
   }[res.base];
   const subLine = res.sub === 'info'
     ? (res.pct[2] >= 60 ? me + 'の更新の時間、ぜんぶ覚えてくれてるんだね。' + me + 'も、' + nm + 'が来る時間、覚えたよ。'
       : me + 'の更新を気にかけてくれてるんだね。来てくれた時間、' + me + 'もちゃんと覚えてるよ。')
     : (res.pct[3] >= 60 ? 'いっぱい使ってくれたよね。数字は見えてるよ。ありがとう。……それでも足りないって、思ってる' + (male ? 'んだろ' : female ? 'んでしょ' : 'んだよね') + '。'
       : '応援してくれた分、ちゃんと届いてるよ。ありがとう。……もっと、なんて、言ってもいい？');
-  const out = [nm + 'へ。', '診断、最後まで受けてくれてありがとう。' + total + '秒。ちゃんと数えてたよ。', timeLine,
-    'ひとつずつ、' + nm + 'の答えに返事をさせてね。', ...rx, hesLine, awayLine];
-  if(chg > 0) out.push('選びなおしたのも、' + chg + '回。最後に選んだほうが、ほんとうの気持ちだよね。');
-  out.push(baseLine, subLine);
+  const out = [nm + 'へ。', '診断、最後まで受けてくれてありがとう。', traitLine,
+    'いくつか、' + nm + 'の答えに返事をさせてね。', ...rx];
+  if(state.prevLast){
+    out.push(state.prevLast !== res.type.name
+      ? '前に来てくれたときは、「' + state.prevLast + '」だったよね。今回は「' + res.type.name + '」。……何か、あった？'
+      : '前に来てくれたときも、「' + state.prevLast + '」だったよね。変わらないんだね。……うれしい。');
+  }
+  out.push(...base.mid, subLine);
   out.push('ねえ、' + nm + '。' + me + 'のこと、好きでいてくれて、ありがとう。');
+  out.push({retype:base.retype});
   out.push('これからもずっと、見てるね。画面の、こっち側から。');
-  out.push(sign);
+  out.push({sign:sign}, {ps:ps});
   return out;
 }
+
+/* ---------- 回答傾向（称号） ---------- */
+const TRAITS = {
+  instant:{name:'即答型', line:'迷わずに答えを選ぶタイプです。直感を信じて決められる反面、推しのことになると、考える前に動いている場面もありそうです。'},
+  deliberate:{name:'熟考型', line:'ひとつひとつの質問に、じっくり向き合うタイプです。自分の気持ちを丁寧に確かめられる反面、考えすぎて疲れることもありそうです。'},
+  waver:{name:'揺らぎ型', line:'答えを選んでから、何度も考え直すタイプです。気持ちがひとつに決まらないのは自然なことで、迷えるのは誠実さの表れでもあります。'},
+  steady:{name:'マイペース型', line:'考える時間も決める速さも、ほどよく自分のペースを保てるタイプです。推し活でも、無理のない距離感を選びやすい傾向があります。'}
+};
+function traitOf(){
+  const sec = state.firstMs.map(m => m / 1000), avg = sum(sec) / sec.length, mx = Math.max.apply(null, sec);
+  const chg = sum(state.changes);
+  if(chg >= 3) return TRAITS.waver;
+  if(avg >= 7 || mx >= 15) return TRAITS.deliberate;
+  if(avg < 3.5) return TRAITS.instant;
+  return TRAITS.steady;
+}
+/* ---------- 診断の中身：軸ごとの説明（低 / 中 / 高）と総評 ---------- */
+const AXDESC = [
+  ['推しがいなくても、日常がしっかり回っている状態です。推し活は生活の一部ですが、中心にはなっていません。仕事や趣味、人間関係とのバランスが取れていて、長く無理なく続けやすい形です。休止や更新の停止があっても、気持ちが大きく崩れにくいでしょう。気が向いたときに、ふらっと見に行くくらいの距離感が合っています。',
+   '推しの存在が、毎日のリズムや気分を支えている状態です。更新を楽しみにしたり、元気をもらったりと、生活にいい張りが出ています。推し以外の楽しみも持てていれば、安定した推し活です。推しの活動に合わせて気分が上下することもありますが、自然な範囲です。今の距離感を、ひとつの基準にしておくと安心です。',
+   '推しが生活や気持ちの中心にあり、いない日常が想像しにくい状態です。大きな支えである反面、活動の休止や更新の停止があると、心の揺れも大きくなります。この状態が続くのは、お勧めしません。推し以外にも、話を聞いてくれる人や落ち着ける時間を持っておくと、気持ちが安定します。'],
+  ['推しを「みんなの推し」として、自然に受け止められている状態です。他のファンの存在や推しの交友関係にも、心が乱れにくく、穏やかに応援できています。独占したい気持ちが少ないぶん、気楽に長く続けやすい推し方です。ファン同士の交流も、楽しみながら広げていけるでしょう。同じ推しを好きな人との感想交換も、きっと楽しめます。',
+   '推しに対して「自分にとって特別」という感覚が育っている状態です。大切にされたい気持ちや、他のファンへの小さな対抗心が出ることもあります。適度な特別感は、応援の原動力になります。ただ、比べすぎると疲れてしまうので、自分のペースを忘れないでください。特別だと感じる理由を、日記に書き出してみるのもお勧めです。',
+   '推しを「自分だけのもの」と感じる気持ちが強い状態です。一番わかっているという自信が支えになる一方、同担や推しの交友関係に心が波立ちやすくなります。この状態が続くのは、お勧めしません。推しの言葉は「みんなへの言葉」としても受け取ると、少し楽になります。独占したい気持ちは、創作や日記など別の形で出してみてください。'],
+  ['推しの情報は、流れてきたときに楽しむくらいの距離感です。更新を追い続けなくても、好きな気持ちは続いています。情報に振り回されないぶん、疲れにくい推し方です。見逃した情報は、あとから追いかけるだけでも十分に楽しめます。気になったときに、まとめて見返すくらいのペースが、今のあなたには合っています。',
+   '推しの更新やスケジュールを、日常的にチェックしている状態です。情報をきちんと追えているので、推し活を安心して楽しめています。チェックする時間帯を決めておくと、さらに疲れにくくなります。見逃しが少ないぶん、推しの変化にも気づきやすいはずです。その観察力は、応援を続けるうえでの強みになります。',
+   '推しの更新や動きを、細かく把握している状態です。その観察力は、推しの変化にいち早く気づける強みでもあります。ただ、追い続けるほど心は休まりにくくなります。通知を切る時間や、あえて見ない日をつくると、楽しさが長持ちします。追いかけすぎる状態が続くのは、お勧めしません。まずは一日一回の確認から始めてみてください。'],
+  ['応援は、自分の気持ちに無理のない範囲で続けている状態です。グッズやイベントに多くを使わなくても、推しを想う気持ちは続いています。生活の余裕を大切にできている、健やかな応援の形です。感想を伝えるなど、お金をかけない応援も、立派な力になります。無理なく続けられていることが、いちばんの強みです。',
+   'グッズやイベント、配信などで、推しをしっかり応援できている状態です。使う時間やお金が、そのまま楽しさにつながっているのが理想的です。無理のない範囲を保てていれば、とても健やかな応援です。月の予算をあらかじめ決めておくと、さらに安心して続けられます。楽しめているうちは、そのペースで大丈夫です。',
+   '推しのために、時間やお金を惜しまず使っている状態です。その熱量は、推しにとって大きな力になります。ただ、生活を削ってまで応援すると、あとで苦しくなることもあります。この状態が続くのは、お勧めしません。予算や時間に上限を決めておくと、長く応援を続けられます。使った額より、続けた時間のほうを大切にしてください。']
+];
+const VERDICT = {
+  fusion:'推しと自分の境界がやわらかく重なり、生活も気持ちも推しと結びついています。どれもお勧めはしませんが、そこまで想われて嬉しい推しも、いるかもしれません。',
+  exclusive:'推しへの特別感が強く、生活は推しがいなくても保てています。独占したい気持ちはお勧めしませんが、その一途さを嬉しく思う推しも、いるかもしれません。',
+  daily:'推しが毎日のリズムを支えています。生活を預けすぎるのはお勧めしませんが、頼りにされて嬉しい推しも、いるかもしれません。',
+  balanced:'推しとの距離が保たれ、生活とのバランスがとれています。この距離感で応援を続けてもらえて、ありがたいと思っている推しも、いるかもしれません。',
+  graduate:'熱量が落ち着き、距離を置く段階にあります。自然な変化ですが、少し寂しく思う推しも、いるかもしれません。'
+};
 function recordPlay(res){
   const s = store.get() || {plays:0, endings:{}};
   s.plays = (s.plays || 0) + 1; s.last = res.type.name;
@@ -929,15 +1012,35 @@ async function breakdown(){
   }
   await wait(1100);
   const lines = letter(res);
+  state.skip = false;
+  const pace = ms => wait(state.skip ? Math.max(30, ms * 0.2) : ms);
+  const hint = $('#skiphint'); hint.hidden = false;
+  const typeInto = async (el, text, ms) => { for(const ch of text){ el.textContent += ch; await pace(ms); } };
+  const eraseAll = async (el, ms) => { while(el.textContent.length){ el.textContent = el.textContent.slice(0, -1); await pace(ms); } };
   for(let k = 0; k < lines.length; k++){
+    const it = lines[k];
     const p = document.createElement('p');
-    p.textContent = lines[k];
-    if(k === lines.length - 1) p.className = 'sign';
+    let text = '';
+    if(typeof it === 'string') text = it;
+    else if(it.sign){ text = it.sign; p.className = 'sign'; }
+    else if(it.ps){ text = it.ps; p.className = 'ps'; }
+    else if(it.retype){ text = it.retype[1]; }
     $('#letter').append(p);
     requestAnimationFrame(() => p.classList.add('in'));
     scrollEnd(p);
-    await wait(700 + lines[k].length * 40);
+    if(it && it.retype && !reduce){
+      await typeInto(p, it.retype[0], 85);
+      await pace(900);
+      await eraseAll(p, 40);
+      await pace(350);
+      await typeInto(p, it.retype[1], 70);
+      await pace(900);
+    } else {
+      p.textContent = text;
+      await pace(600 + text.length * 32);
+    }
   }
+  hint.hidden = true;
   await wait(2200);
   const cut = $('#cut'); cut.hidden = false; $('#cutmsg').textContent = '';
   await wait(1800);
@@ -963,8 +1066,9 @@ function shareParts(res, sayLine){
   const url = HAS_URL ? BASE_URL + 'result/' + res.id + '/' : '';
   const l1 = HASHTAG + 'の結果は「' + res.type.name + '」でした。';
   const l2 = sayLine;
-  const full = [l1, l2, url, '#' + HASHTAG].filter(Boolean).join('\n');
-  const x = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(l1 + '\n' + l2)
+  const l3 = '回答傾向：' + traitOf().name;
+  const full = [l1, l2, l3, url, '#' + HASHTAG].filter(Boolean).join('\n');
+  const x = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(l1 + '\n' + l2 + '\n' + l3)
     + (url ? '&url=' + encodeURIComponent(url) : '') + '&hashtags=' + encodeURIComponent(HASHTAG);
   return {full:full, x:x};
 }
@@ -973,16 +1077,31 @@ function buildReveal(res){
   const seen = Object.assign({}, (saved && saved.endings) || {}, {[res.ending]:1});
   const mine = ENDINGS.find(e => e[0] === res.ending)[1];
   $('#endLine').textContent = 'あなたが迎えたのは「' + mine + '」でした。' + (res.ending === 'healthy' ? '推し活としては、いちばん安全な結末です。' : res.ending === 'cold' ? '距離を置く選択も、ちゃんとした推し方のひとつです。' : '怖がらせてしまったなら、ごめんなさい。');
-  const ax = $('#axes'); ax.textContent = '';
-  res.pct.forEach((p, a) => {
-    const d = document.createElement('div'); d.className = 'ax';
-    const l = document.createElement('span'); l.textContent = AXREAL[a];
-    const b = document.createElement('b'); b.textContent = p + '%';
-    d.append(l, b); ax.append(d);
+  const bars = $('#bars'); bars.textContent = '';
+  res.pct.forEach((pc, a) => {
+    const lv = pc < 35 ? 0 : pc < 65 ? 1 : 2;
+    const row = document.createElement('div'); row.className = 'brow';
+    const head = document.createElement('div'); head.className = 'bh';
+    const nmEl = document.createElement('span'); nmEl.textContent = AXREAL[a] + '（' + AXLABEL[a] + '）';
+    const lvEl = document.createElement('em'); lvEl.textContent = ['低', '中', '高'][lv];
+    nmEl.append(lvEl);
+    const num = document.createElement('span'); num.textContent = pc + '%';
+    head.append(nmEl, num);
+    const tr = document.createElement('div'); tr.className = 'btrack';
+    const fill = document.createElement('i'); tr.append(fill);
+    [35, 65].forEach(t => { const tk = document.createElement('b'); tk.style.left = t + '%'; tr.append(tk); });
+    const sc = document.createElement('div'); sc.className = 'bscale';
+    ['低', '中', '高'].forEach(t => { const sp = document.createElement('span'); sp.textContent = t; sc.append(sp); });
+    const ds = document.createElement('p'); ds.className = 'bdesc'; ds.textContent = AXDESC[a][lv];
+    row.append(head, tr, sc, ds); bars.append(row);
+    setTimeout(() => { fill.style.width = pc + '%'; }, 150 + a * 120);
   });
+  $('#verdict').textContent = VERDICT[res.base];
+  $('#traitLine').textContent = '回答傾向：' + traitOf().name + '　' + traitOf().line;
   const ng = topNg(res, 3);
   $('#cardMeta').textContent = '受検No. ' + state.no + '　' + state.dateStr + '　Ver.1.0';
   $('#cardType').textContent = res.type.name;
+  $('#cardTrait').textContent = '回答傾向：' + traitOf().name;
   buildMap($('#cardMap'), res.pct[1], res.pct[0]);
   $('#cardSay').textContent = '「' + ng[0] + '」';
   const ul = $('#cardNg'); ul.textContent = '';

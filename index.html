@@ -406,7 +406,7 @@ const store = {
   set(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch(e){} }
 };
 /* 公開URL（末尾スラッシュ付き）。未設定の間は共有文にURLを入れない */
-const VERSION = '1.3.56', BUILD = '2026-10-14';
+const VERSION = '1.3.57', BUILD = '2026-10-14';
 const BASE_URL = 'https://atuapfp.github.io/oshi-and-me/';
 const HAS_URL = BASE_URL.indexOf('__') !== 0;
 const HASHTAG = '推しとわたし診断';
@@ -653,7 +653,7 @@ function morph(el, to, ms){
 }
 /* 下に重なる表示（アプリ内ブラウザの投稿プレビューなど）で隠れないよう、画面の上寄りに寄せる */
 let kvT = 0;
-/* 自動スクロールは「キモ」だけ。通しプレイで最大2回：①最後の質問の一言（ここ）②Q6で「大丈夫、ここにいるよ」に変わるとき（質問文へ） */
+/* 自動スクロールは「キモ」だけ。通しプレイで最大3回（Q1の「次へ」誘導＋以下の2つ）：①最後の質問の一言（ここ）②Q6で「大丈夫、ここにいるよ」に変わるとき（質問文へ） */
 function keepVisible(){
   if(state.i !== Q.length - 1) return;
   clearTimeout(kvT);
@@ -853,6 +853,14 @@ function showVoice(){
   state.voiceShown = true;
   typeVoice(fmt((q.vv && state.sel !== null) ? q.vv[state.sel] : q.v), state.i >= 6 ? 90 : 70);
 }
+function nudgeNext(){
+  setTimeout(() => {
+    try {
+      const r = $('#next').getBoundingClientRect(), h = window.innerHeight || 700, limit = h * 0.68;
+      if(r.bottom > limit) window.scrollBy({top: r.bottom - limit, behavior: reduce ? 'auto' : 'smooth'});
+    } catch(e){}
+  }, 200);
+}
 function pick(k){
   if(state.sel === k) return;
   const i = state.i, changed = state.sel !== null;
@@ -861,6 +869,7 @@ function pick(k){
     state.firstMs[i] = Date.now() - state.qAt;
   }
   state.sel = k;
+  if(i === 0 && !changed) nudgeNext();   // 1問目だけ：選ぶと「次へ」が見える位置まで動かし、選択→次へ、の流れを覚えてもらう
   if(Q[i].vv){ clearTimeout(state.voiceT); state.voiceShown = true; typeVoice(fmt(Q[i].vv[k]), 50); }
   else if(Q[i].v && !state.voiceShown){ clearTimeout(state.voiceT); showVoice(); }
   [...$('#opts').children].forEach((b, idx) => b.setAttribute('aria-checked', String(idx === k)));

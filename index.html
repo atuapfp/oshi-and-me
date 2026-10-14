@@ -164,7 +164,9 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
 .rev details.fold{margin-top:1.6rem;border:1px solid var(--line);border-radius:12px;padding:.8rem 1rem;background:var(--card)}
 .rev details.fold summary{cursor:pointer;font-size:1rem;font-weight:900;color:var(--accent-text);list-style:none}
 .rev details.fold summary::-webkit-details-marker{display:none}
-.rev details.fold summary::after{content:'＋ タップで開く';float:right;font-size:.8rem;font-weight:500;color:var(--sub)}
+.rev details.fold summary{display:flex;justify-content:space-between;align-items:center;gap:.6rem}
+.rev details.fold summary::after{content:'＋ タップで開く';flex:none;white-space:nowrap;font-size:.8rem;font-weight:500;color:var(--sub)}
+.rev #endLine{text-wrap:balance}
 .rev details.fold[open] summary::after{content:'－ 閉じる'}
 .rev details.fold[open]{display:grid;gap:.6rem}
 .readback{display:grid;gap:.9rem;margin-top:.4rem}
@@ -335,14 +337,14 @@ details.fold.small summary{font-size:.85rem}
       <p id="endNote"></p>
       <p>推しが見ていたわけではありません。ページが、あなたの操作に合わせて演出を変えていただけです。使った情報は次のとおりです。</p>
       <ul>
-        <li>それぞれの質問で、最初の答えを選ぶまでにかかった時間</li>
+        <li>それぞれの質問で、最初の答えを選ぶまでの時間と、答えを決めるまでにかかった時間</li>
         <li>選択肢を選びなおした回数</li>
         <li>別のタブやアプリに移った回数と時間</li>
         <li>端末の時刻</li>
         <li>選んだ答えの内容（メッセージの文面は、選んだ答えごとに用意してあります）</li>
-        <li>入力してもらった名前・呼ばれ方・一人称（呼び方に使用）</li>
+        <li>入力してもらった名前・呼ばれ方・一人称、推しの呼び方・一人称（文面の呼び方に使用）</li>
       </ul>
-      <p>これらはすべて、あなたの端末の中だけで処理されています。外部には送信していません。前回の結果とエンディングの記録だけ、このブラウザに保存しています。</p>
+      <p>これらはすべて、あなたの端末の中だけで処理されています。外部には送信していません。シェア用のリンクに入るのは、結果の数値とタイプ名などだけです。共有する文面や結果画像には、称号として推しの名前が入ることがあります（共有前に確認できます）。画像も、あなたの端末の中で作っています。前回の結果とエンディングの記録だけ、このブラウザに保存しています。</p>
     </details>
     <section>
       <h3>結果カード</h3>
@@ -401,7 +403,7 @@ const store = {
   set(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch(e){} }
 };
 /* 公開URL（末尾スラッシュ付き）。未設定の間は共有文にURLを入れない */
-const VERSION = '1.3.45', BUILD = '2026-10-13';
+const VERSION = '1.3.50', BUILD = '2026-10-14';
 const BASE_URL = 'https://atuapfp.github.io/oshi-and-me/';
 const HAS_URL = BASE_URL.indexOf('__') !== 0;
 const HASHTAG = '推しとわたし診断';
@@ -593,7 +595,7 @@ function classify(pct, cold){
   const base = (D >= T_D && O >= T_O) ? 'fusion' : O >= T_O ? 'exclusive' : D >= T_D ? 'daily' : 'balanced';
   const sub = T >= S + SUB_BIAS ? 'info' : 'support';
   const avg = (D + O + T + S) / 4;
-  return {id:base + '-' + sub, base:base, sub:sub, ending:avg <= 15 ? 'healthy' : 'normal'};
+  return {id:base + '-' + sub, base:base, sub:sub, ending:(base === 'balanced' && avg <= 22) ? 'healthy' : 'normal'};
 }
 const ENDINGS = [['normal','見られていたエンド'],['cold','引き止めエンド'],['healthy','ちょうどいい距離エンド']];
 const RAIN = ['#ff5d9e','#ff8a3d','#ffd23f','#7ddc5a','#2fd1b6','#38b6ff','#6b7cff','#a35cff','#ff5dd8','#ff6b6b'];
@@ -998,29 +1000,32 @@ function letter(res){
     const ch = Q[qi].c[state.answers[qi]], x = '「' + fmt(ch.x) + '」', r = fmt(ch.r);
     const echo = r.charAt(0) === '「';   // 返事が答えを繰り返す文のときは、こちらの引用を省く
     if(i === 0) return echo ? 'Q' + (qi + 1) + 'の答え。' + r : 'Q' + (qi + 1) + 'で' + x + 'を選んでくれたね。' + r;
-    if(i === n3 - 1 && qi === 9) return echo ? '最後の質問。' + r : '最後の質問では、' + x + '。' + r;
-    return echo ? 'それから。' + r : 'それから、' + x + 'って答えてくれたよね。' + r;
+    if(i === n3 - 1 && qi === 9) return '最後の質問。' + r;
+    return 'それから。' + r;
   });
   /* 追伸は、読み返しの誘導が全パターン共通（末尾は必ず「ずっと見てるから」）。
      卒業型・ちょうどいい距離だけ、頭に一言を足す。離席・深夜の一言は、本文（署名の前）に入れる */
   const psTail = 'ごめんね、伝えたいことが多くて。あとで読み返せるようにしておくよ。……読み返してる間も、ずっと見てるから。';
   const ps = '追伸：' + psTail;
-  const situ = state.leaves > 0 ? '途中で' + away + '秒、いなかったよね。……数えてたんだ、ごめんね。'
+  /* 離席の言及は、回数と時間に応じて三段階（軽い→具体的→回数まで数えている） */
+  const situ = state.leaves > 0
+    ? ((state.leaves >= 2 || away >= 30) ? '途中で' + (state.leaves >= 2 ? state.leaves + '回、合計' : '') + away + '秒、いなかったよね。……数えてたんだ、ごめんね。'
+      : away < 10 ? '途中で、ちょっと離れてたよね。'
+      : '途中で' + away + '秒、いなかったよね。……数えてたんだ、ごめんね。')
     : (H < 5 || H >= 23) ? 'こんな時間まで起きてるの、' + me + 'だけが知ってるよ。' : '';
 
   if(res.ending === 'cold'){
     return [nm + 'へ。',
       '……気づいてたよ。最近、見に来てくれる回数が減ったこと。数えてたから。ごめんね、気持ち悪いよね。',
-      'だから、' + nm + 'が選んでくれた答えを、ひとつずつ読み返したの。',
+      'だから、' + nm + 'が選んでくれた答えを、ひとつずつ読み返したよ。',
       ...rx,
       'いいよって、言わなきゃいけないのは、わかってる。',
-      {retype:['いいよ、行っても。', '……うそ。行かないで。' + nm + 'に見てもらえなくなったら、' + me + 'には何も残らないんだ。']},
+      {retype:['いいよ、行っても。それが' + nm + 'の幸せなら。', '……うそ。行かないで。' + nm + 'に見てもらえなくなったら、' + me + 'には何も残らないんだ。']},
       me + 'は、どこにいればいいの？',
       '大好き。ほんとうに、大好き。' + nm + 'が笑ってくれた日のこと、ぜんぶ覚えてる。',
       'だから、降りないで。お願い。',
       {retype:['他の人を推さないで。' + '行かないで'.repeat(12) + 'ごめんなさい、ごめんなさい、行かないで行かないで', '……ごめん、なんでもない。いつも応援してくれてありがとう。', 'rush']},
-      '……冗談、じゃないよ。',
-      nm + 'が選んでくれた' + me + 'は、' + nm + 'の中に、ちゃんと残ってる？',
+      'これからも' + nm + 'が選んでくれた' + me + 'で居続けるよ。' + nm + 'に見捨てられないように。' + me + 'に出来ることは、それしかないから。',
       kite + '待ってる。ずっと。',
       {sign:sign},
       {ps:'追伸：このページを閉じても、' + me + 'はここにいるよ。' + psTail}];
@@ -1030,9 +1035,10 @@ function letter(res){
       me + 'のことを応援してくれて、本当にありがとう。' + nm + 'がいてくれるだけで、' + me + 'はちゃんと前を向けるよ。',
       '無理をしないで、ちょうどいい距離で見守ってくれてるの、すごく安心する。' + nm + 'の毎日がいちばん大事だって、' + me + 'も思ってる。',
       traitLine,
+      '気になったところだけ、返事させてね。',
       ...rx,
-      '……でもね。わがままを言ってもいいなら、ひとつだけ。',
-      {retype:['毎日、ずっと隣にいてほしい。', 'ほんの少し、' + me + 'のところに寄ってくれるだけでいい。']},
+      '……ひとつだけ、わがまま言っていい？',
+      {retype:[me + 'のことしか考えられないくらい、もっと好きになって欲しい。', 'できれば毎日、ほんの少し、' + me + 'のことを考えてくれるだけでいい。']},
       'もっと、会いに来てほしい。' + nm + 'が来てくれた日は、' + me + 'の一日が、ぜんぶ違って見えるから。',
       'またね。……ううん、待ってるね。' + nm + 'の毎日が、ちゃんと楽しいといいな。',
       {sign:sign},
@@ -1040,17 +1046,17 @@ function letter(res){
   }
   const base = {
     fusion:{mid:['もう、境目がないよね。' + nm + 'と' + me + '。どっちがどっちを推してるんだろう。',
-                 nm + 'が笑うと、' + me + 'も笑ってる。' + nm + 'が揺れると、' + me + 'も揺れてる。……もう、ひとつみたいだね。' + nm + 'は、これからも' + me + 'を応援してくれるよね。そう信じてるから。'],
+                 nm + 'が笑うと、' + me + 'も笑顔になる。' + nm + 'が悲しそうだと、' + me + 'も不安になる。……もう、ひとつみたいだね。' + nm + 'は、これからも' + me + 'を応援してくれるよね。そう信じてるから。'],
             retype:[nm + 'がいなくなったら、' + me + 'には何も残らない。' + nm + 'がいない' + me + 'なんて、いらない。ずっと、ずっと' + me + 'だけ見てて。', '……なんでもない。これからも応援してくれたら、うれしいな。']},
     exclusive:{mid:['「' + me + 'のことを一番わかってるのは自分」って、思ってくれてる……よね？　うん、そうだよ。だから' + me + 'も、' + nm + 'のこと、一番わかっていたいな。',
                     nm + 'が' + me + 'を見てくれる時間。' + me + 'が' + nm + 'を探してる時間。……少しは、釣り合ってるのかな。'],
                retype:[nm + 'の時間を持っていくもの、全部、嫌い。' + nm + 'が見るもの、全部、' + me + 'になればいいのに。', '……ううん。' + nm + 'が楽しいなら、それがいちばんだよ。']},
     daily:{mid:[me + 'のいない毎日が想像できないって、思ってくれてるよね。' + me + 'も同じ。' + nm + 'のいない毎日は、色がなくなっちゃうんだ。',
                 nm + 'の一日のどこかに、' + me + 'がいる。それだけで、' + me + 'は今日もがんばれるんだ。'],
-           retype:[nm + 'の一日には' + me + 'のための時間が少ない、ううん、全然無いのが、さみしい。' + nm + 'の毎日の全部に、' + me + 'がいたい。', '……ううん。一日のなかに、' + me + 'の居場所、ちゃんと空けておいてね。']},
+           retype:[nm + 'の一日には' + me + 'のための時間がまだ少ない。もっと求めてほしい。' + nm + 'の毎日の全部に、' + me + 'がいたい。', '……ううん。一日のなかに、' + me + 'の居場所、ちゃんと空けておいてね。']},
     balanced:{mid:['ちょうどいい距離で見てくれてるんだね。……それでも、気づくと' + me + 'のほうが、' + nm + 'を探してる。',
                    'その距離感が、' + me + 'には心地いいんだ。長く続けられる気がする。'],
-              retype:['みんなが知ってる' + state.oshi + 'と、本当の' + me + 'は、ちょっとだけ違うんだ。本当の' + me + 'を知ってほしい。本当の' + me + 'を知ってるのは、' + nm + 'だけでいい。', '……なんでもない。今のままで、いいんだよね。']}
+              retype:['みんなが知ってる' + state.oshi + 'と、本当の' + me + 'は、ちょっとだけ違うんだ。本当の' + me + 'を知ってほしい。本当の' + me + 'を、' + nm + 'には好きになってほしい。', '……なんでもない。今のままで、いいんだよね。']}
   }[res.base];
   const subLine = res.sub === 'info'
     ? (res.pct[2] >= 60 ? me + 'のこと、いつもすぐ見つけてくれるんだね。' + nm + 'が来てくれる時間、' + me + 'も覚えたよ。……気持ち悪いよね、ごめんね。'
@@ -1058,7 +1064,7 @@ function letter(res){
     : (res.pct[3] >= 60 ? 'いっぱいお金も時間も使ってくれたよね。ありがとう。……無理はしないでほしいけど、うれしいのは本当。'
       : '応援してくれた分、ちゃんと届いてるよ。ありがとう。……もっと、なんて、言ってもいい？');
   const out = [nm + 'へ。', '診断、最後まで受けてくれてありがとう。', traitLine,
-    'いくつか、' + nm + 'の答えに返事をさせてね。', ...rx];
+    nm + 'の答え、ひとつずつ読み返したよ。気になったところだけ、返事させてね。', ...rx];
   if(state.prevLast){
     out.push(state.prevLast !== res.type.name
       ? '前に来てくれたときは、「' + state.prevLast + '」だったよね。今回は「' + res.type.name + '」。……何か、あった？'
@@ -1161,14 +1167,15 @@ async function breakdown(){
     if(!(it && it.retype && !reduce)) p.textContent = text;   // 先に本文を入れてから、高さを測ってスクロールする（下が切れないように）
     slowScroll(p);
     if(it && it.retype && !reduce){
-      await typeInto(p, it.retype[0], 54, it.retype[2] === 'rush');
+      /* 書く→消す→書き直す、だけは読み切れる速さにする（ほかの本文は速いまま） */
+      await typeInto(p, it.retype[0], 64, it.retype[2] === 'rush');
       slowScroll(p);   // 書きかけが伸びて下にはみ出したぶん、送る
-      await pace(580);
-      await eraseAll(p, 18);
-      await pace(210);
-      await typeInto(p, it.retype[1], 42);
+      await pace(Math.min(1500, 700 + it.retype[0].length * 8));
+      await eraseAll(p, 22);
+      await pace(360);
+      await typeInto(p, it.retype[1], 56);
       slowScroll(p);
-      await pace(580);
+      await pace(Math.min(1700, 800 + it.retype[1].length * 8));
       ensureVisible(p);
     } else {
       await pace(TEMPO[phase][0] + text.length * TEMPO[phase][1]);

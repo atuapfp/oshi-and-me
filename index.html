@@ -408,13 +408,18 @@ const $ = s => document.querySelector(s);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const sum = a => a.reduce((x, y) => x + y, 0);
+/* 「迷った時間」＝最初に選ぶまでの時間から、問いと選択肢を読む時間（8文字/秒）と、画面を離れていた時間を引いた秒数 */
+function thinkSec(i){
+  const q = Q[i], chars = q.t.length + sum(q.c.map(c => c.t.length));
+  return Math.max(0, state.firstMs[i] / 1000 - chars / 8 - state.awayQ[i]);
+}
 const KEY = 'oshi-to-watashi-v1';
 const store = {
   get(){ try { return JSON.parse(localStorage.getItem(KEY)); } catch(e){ return null; } },
   set(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch(e){} }
 };
 /* 公開URL（末尾スラッシュ付き）。未設定の間は共有文にURLを入れない */
-const VERSION = '1.3.70', BUILD = '2026-10-14';
+const VERSION = '1.3.71', BUILD = '2026-10-14';
 const BASE_URL = 'https://atuapfp.github.io/oshi-and-me/';
 const HAS_URL = BASE_URL.indexOf('__') !== 0;
 const HASHTAG = '推しとわたし診断';
@@ -487,6 +492,9 @@ const Q = [
     {t:'同じ{oshi}を推す仲間がいて、うれしい人', x:'仲間がいて、うれしい', s:Z,
       n:'仲間と楽しめるのは、素敵な応援です。ファン同士の輪を喜ぶ推しも、いるかもしれません。',
       r:'仲間がいてうれしいって言ってくれる。みんなで{me}を応援してくれるの、ほんとうにありがたいよ。そのなかで{nm}が楽しいなら、それがいちばんだな。'},
+    {t:'ほかのファンのことは、あまり気にしていない人', x:'ほかのファンは、あまり気にならない', s:Z,
+      n:'周りを気にせず、自分のペースで応援できているのは、健やかな距離感です。マイペースな応援を好む推しも、いるかもしれません。',
+      r:'周りは気にならないんだ。それなら、{nm}のペースで、ゆっくり応援してくれたらいいよ。……{me}のほうは、{nm}のこと、ちゃんと見えてるからね。'},
     {t:'同じ熱量の人と、{oshi}の話をしたい人', x:'同じ熱量の人とは、話してみたい', s:[0,1,0,0],
       n:'同じ熱量の人と語りたいのは自然です。感想が広がって嬉しい推しも、いるかもしれません。',
       r:'同じ熱量の人と話したいんだ。{nm}が楽しそうなのは、{me}もうれしい。どんな話をしたか、{me}にも聞かせてくれる？'},
@@ -616,7 +624,7 @@ const POOL = '縺繧ｮ蜉髢隕呈＞譁蟄繝ｧ荳';
 const fresh = () => ({
   name:'あなた', nm:'きみ', hon:'',
   oshi:'推し', me:'私', my:'私',
-  i:0, answers:[], firstMs:Array(Q.length).fill(0), changes:Array(Q.length).fill(0),
+  i:0, answers:[], firstMs:Array(Q.length).fill(0), awayQ:Array(Q.length).fill(0), changes:Array(Q.length).fill(0),
   dwell:Array(Q.length).fill(0), leaves:0, awaySec:0, sel:null, qAt:0, voiceT:null, voiceShown:false,
   resultT:null, broke:false, res:null, scene:'intro', started:false, share:'', no:'', dateStr:''
 });
@@ -836,8 +844,8 @@ function renderQ(i, restore){
   $('#foot').textContent = i < 3 ? '※回答は、診断のためだけに使われます。' : i < 6 ? '※回答は保存されます。' : '※回答は、' + state.me + 'が覚えておきます。';
   if(q.v && !restore){ state.voiceT = setTimeout(showVoice, 350); }
   if(i >= 3){
-    const p = i - 1, hs = state.firstMs[p] / 1000;
-    if(hs >= 10) say('さっき、' + Math.round(hs) + '秒も迷ってたね。');
+    const p = i - 1, hs = thinkSec(p);
+    if(hs >= 15) say('さっき、' + Math.round(hs) + '秒も迷ってたね。');
     else if(state.changes[p] > 0) say('さっき、選びなおしたよね。見えてたよ。');
   }
   if(restore && state.answers[i] !== undefined){
@@ -990,6 +998,7 @@ document.addEventListener('visibilitychange', () => {
   if(!state.started || state.scene === 'dark' || state.scene === 'reveal' || state.scene === 'intro') return;
   if(sec < 2) return;
   state.leaves++; state.awaySec += sec;
+  if(state.scene === 'quiz' && state.sel === null) state.awayQ[state.i] += sec;
   if(state.scene === 'quiz' && state.i >= 2) say('どこ行ってたの？ ' + sec + '秒、いなかったね。');
   if(state.scene === 'result') setTimeout(breakdown, 600);
 });
@@ -1012,7 +1021,7 @@ function logLines(){
     '回答 ' + Q.length + '件を保存しました',
     '呼び名「' + state.nm + '」を登録しました',
     '選びなおし ' + sum(state.changes) + '回を記録しました',
-    '迷った時間 ' + Math.round(sum(state.firstMs) / 1000) + '秒を記録しました',
+    '迷った時間 ' + Math.round(sum(Q.map((q, i) => thinkSec(i)))) + '秒を記録しました',
     '画面を離れた回数 ' + state.leaves + '回（' + Math.round(state.awaySec) + '秒）を記録しました',
     'いまの時刻 ' + c.H + ':' + c.M + ' を記録しました',
     '宛先：' + state.oshi,
@@ -1041,7 +1050,7 @@ function letter(res){
   const sign = state.oshi === '推し' ? '— あなたの推しより' : '— ' + state.oshi + 'より';
   const trait = traitOf();
   let worst = {i:0, sec:0};
-  state.firstMs.forEach((ms, i) => { const sc = Math.round(ms / 1000); if(sc > worst.sec) worst = {i:i, sec:sc}; });
+  state.firstMs.forEach((ms, i) => { const sc = Math.round(thinkSec(i)); if(sc > worst.sec) worst = {i:i, sec:sc}; });
   const wTxt = fmt(Q[worst.i].c[state.answers[worst.i]].x);
   const traitLine = {
     instant: avgDwell < 1.8 ? (res.ending === 'healthy' ? 'テンポよく答えてくれたね。……ちゃんと読んでくれてたらうれしいな、なんて。' : 'ほとんど読まずに答えたよね。……責めてるわけじゃないよ。ただ、' + me + 'の言葉は、ちゃんと読んでほしいな。') : '迷わず選んでくれたところ、ぜんぶ覚えてる。' + me + 'のことは、迷わないんだね。',
@@ -1140,10 +1149,11 @@ const TRAITS = {
   steady:{name:'マイペース型', line:'考える時間も決める速さも、ほどよく自分のペースを保てるタイプです。推し活でも、無理のない距離感を選びやすい傾向があります。'}
 };
 function traitOf(){
-  const sec = state.firstMs.map(m => m / 1000), avg = sum(sec) / sec.length, mx = Math.max.apply(null, sec);
+  const sec = state.firstMs.map(m => m / 1000), avg = sum(sec) / sec.length;
+  const th = Q.map((q, i) => thinkSec(i)), thAvg = sum(th) / th.length, thMax = Math.max.apply(null, th);
   const chg = sum(state.changes);
   if(chg >= 3) return TRAITS.waver;
-  if(avg >= 7 || mx >= 15) return TRAITS.deliberate;
+  if(thAvg >= 4 || thMax >= 20) return TRAITS.deliberate;
   if(avg < 3.5) return TRAITS.instant;
   return TRAITS.steady;
 }

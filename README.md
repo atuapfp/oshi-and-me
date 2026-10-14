@@ -19,6 +19,6 @@
 - `.nojekyll` Jekyll処理を無効化
 
 ## 補足
-- 回答・行動データはすべて端末内のみ（localStorage `oshi-to-watashi-v1`）。外部送信なし。
+- 回答・行動データはすべて端末内のみ（localStorage `oshi-to-watashi-v1`）。外部送信なし。書体（DotGothic16 / Shippori Mincho B1 / Zen Maru Gothic、SIL OFL 1.1）は `fonts/` に同梱し、Google Fonts などの外部サービスには接続しません。ライセンスは `fonts/OFL.txt`。
 - 複製対策をしたい場合は、READMEにLICENSE（例: All rights reserved）や「無断転載禁止」を明記すると抑止になります。
 - 診断はフィクションの娯楽です。医学的診断ではありません。

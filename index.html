@@ -66,6 +66,9 @@ input:focus-visible,.btn:focus-visible,.opt:focus-visible{outline:3px solid var(
 a.btn{display:block;text-align:center;text-decoration:none}
 .btn:disabled{opacity:.4;cursor:not-allowed}
 .btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+#saveImg{font-size:.95rem;padding:.7rem 1.25rem}
+.btn.link{background:none;border:0;color:var(--sub);font-size:.85rem;font-weight:700;letter-spacing:.02em;text-decoration:underline;padding:.4rem}
+.h3sub{font-size:.72rem;font-weight:500;color:var(--sub);margin-left:.4rem}
 .note{font-size:.76rem;color:var(--sub);margin-top:.9rem}
 .again{font-family:var(--f-voice);color:var(--accent-text);margin-top:1rem;font-size:.95rem}
 
@@ -104,7 +107,7 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
 .opt:hover{border-color:var(--accent)}
 .opt[aria-checked="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .opt[aria-checked="true"] b{border-color:var(--on-accent)}
-.aside.reserve{min-height:5.6rem}
+.aside.reserve{min-height:7rem}
 #s-quiz{padding-bottom:36vh}   /* Xなどのアプリ内ブラウザは、下に投稿プレビューが重なる。文字が隠れないよう、スクロールの余白を確保 */
 .voice{font-family:var(--f-voice);font-size:1.15rem;font-weight:700;color:var(--accent-text);margin-top:1rem;line-height:1.7}
 .whisper{font-family:var(--f-voice);font-size:.9rem;color:var(--sub);margin-top:.3rem;min-height:1.4em}
@@ -348,7 +351,7 @@ details.fold.small summary{font-size:.85rem}
       <p>これらはすべて、あなたの端末の中だけで処理されています。外部には送信していません。シェア用のリンクに入るのは、結果の数値とタイプ名などだけです。共有する文面や結果画像には、称号として推しの名前が入ることがあります（共有前に確認できます）。画像も、あなたの端末の中で作っています。前回の結果とエンディングの記録だけ、このブラウザに保存しています。</p>
     </details>
     <section>
-      <h3>結果カード</h3>
+      <h3>結果カード<small class="h3sub">（長押しでも画像を保存できます）</small></h3>
       <div class="sharecard imgcard"><img id="cardImg" alt="診断結果カード"></div>
       <p class="say-label">ほかのコメント</p>
       <ul class="ngs" id="cardNg"></ul>
@@ -358,11 +361,10 @@ details.fold.small summary{font-size:.85rem}
         <pre class="sharepreview" id="sharePreview"></pre>
       </details>
       <div class="btns">
-        <button class="btn" id="saveImg" type="button">画像で保存する</button>
         <a class="btn" id="xShare" href="#" target="_blank" rel="noopener">Xで共有する</a>
-        <button class="btn ghost" id="copy" type="button">共有用の文をコピー</button>
+        <button class="btn ghost" id="saveImg" type="button">画像で保存する</button>
+        <button class="btn link" id="copy" type="button">共有用の文をコピー</button>
       </div>
-      <p class="hint">スマホでは、上の画像を長押ししても保存できます。</p>
       <textarea id="shareTxt" rows="4" readonly hidden></textarea>
       <p id="copied" role="status"></p>
     </section>
@@ -404,7 +406,7 @@ const store = {
   set(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch(e){} }
 };
 /* 公開URL（末尾スラッシュ付き）。未設定の間は共有文にURLを入れない */
-const VERSION = '1.3.52', BUILD = '2026-10-14';
+const VERSION = '1.3.54', BUILD = '2026-10-14';
 const BASE_URL = 'https://atuapfp.github.io/oshi-and-me/';
 const HAS_URL = BASE_URL.indexOf('__') !== 0;
 const HASHTAG = '推しとわたし診断';
@@ -650,16 +652,20 @@ function morph(el, to, ms){
   });
 }
 /* 下に重なる表示（アプリ内ブラウザの投稿プレビューなど）で隠れないよう、画面の上寄りに寄せる */
-function keepVisible(el){
-  try {
-    const r = el.getBoundingClientRect(), h = window.innerHeight || 700;
-    let dy = 0;
-    if(r.top < 60) dy = r.top - 90;
-    else if(r.bottom > h * 0.6) dy = Math.min(r.bottom - h * 0.55, r.top - 90);
-    if(Math.abs(dy) > 4) window.scrollBy({top:dy, behavior: reduce ? 'auto' : 'smooth'});
-  } catch(e){}
+let kvT = 0;
+function keepVisible(){   // 一言＋ひそひそ文が続けて出ても、スクロールは最大1回（予約済みの領域ごと見える位置へ）
+  clearTimeout(kvT);
+  kvT = setTimeout(() => {
+    try {
+      const r = $('#aside').getBoundingClientRect(), h = window.innerHeight || 700;
+      let dy = 0;
+      if(r.top < 60) dy = r.top - 90;
+      else if(r.bottom > h * 0.6) dy = Math.min(r.bottom - h * 0.55, r.top - 90);
+      if(Math.abs(dy) > 4) window.scrollBy({top:dy, behavior: reduce ? 'auto' : 'smooth'});
+    } catch(e){}
+  }, 150);
 }
-const say = t => { $('#whisper').textContent = t; if(t) keepVisible($('#whisper')); };
+const say = t => { $('#whisper').textContent = t; if(t) keepVisible(); };
 function scrollEnd(el){ try { el.scrollIntoView({block:'end', behavior: reduce ? 'auto' : 'smooth'}); } catch(e){} }
 /* 手紙用：新しい行まで、ゆっくり（約1秒）スクロールする。読んでいる行が急に流れないように */
 let scrollTok = 0;
@@ -806,7 +812,7 @@ function renderQ(i, restore){
   });
   voiceTok++; $('#voice').textContent = ''; $('#whisper').textContent = '';
   $('#back').hidden = i === 0;
-  $('#aside').classList.toggle('reserve', i >= 3);
+  $('#aside').classList.add('reserve');
   const nx = $('#next'); nx.disabled = true;
   nx.textContent = i === Q.length - 1 ? '結果を見る' : (i >= 6 ? 'つぎへ…' : '次へ');
   $('#foot').textContent = i < 3 ? '※回答は、診断のためだけに使われます。' : i < 6 ? '※回答は保存されます。' : '※回答は、' + state.me + 'が覚えておきます。';
@@ -828,17 +834,14 @@ function renderQ(i, restore){
 let voiceTok = 0;
 async function typeVoice(text, ms){
   const tok = ++voiceTok, el = $('#voice');
-  if(reduce){ el.textContent = text; keepVisible(el); return; }
+  if(reduce){ el.textContent = text; keepVisible(); return; }
   el.textContent = '';
-  keepVisible(el);
-  let n = 0;
+  keepVisible();
   for(const ch of text){
     if(tok !== voiceTok) return;
     el.textContent += ch;
-    if(++n % 14 === 0) keepVisible(el);
     await wait(ms);
   }
-  if(tok === voiceTok) keepVisible(el);
 }
 function showVoice(){
   const q = Q[state.i];

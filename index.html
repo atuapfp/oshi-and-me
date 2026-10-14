@@ -406,7 +406,7 @@ const store = {
   set(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch(e){} }
 };
 /* 公開URL（末尾スラッシュ付き）。未設定の間は共有文にURLを入れない */
-const VERSION = '1.3.55', BUILD = '2026-10-14';
+const VERSION = '1.3.56', BUILD = '2026-10-14';
 const BASE_URL = 'https://atuapfp.github.io/oshi-and-me/';
 const HAS_URL = BASE_URL.indexOf('__') !== 0;
 const HASHTAG = '推しとわたし診断';
@@ -653,7 +653,9 @@ function morph(el, to, ms){
 }
 /* 下に重なる表示（アプリ内ブラウザの投稿プレビューなど）で隠れないよう、画面の上寄りに寄せる */
 let kvT = 0;
-function keepVisible(){   // 一言＋ひそひそ文が続けて出ても、スクロールは最大1回（予約済みの領域ごと見える位置へ）
+/* 自動スクロールは「キモ」だけ。通しプレイで最大2回：①最後の質問の一言（ここ）②Q6で「大丈夫、ここにいるよ」に変わるとき（質問文へ） */
+function keepVisible(){
+  if(state.i !== Q.length - 1) return;
   clearTimeout(kvT);
   kvT = setTimeout(() => {
     try {
@@ -667,7 +669,7 @@ function keepVisible(){   // 一言＋ひそひそ文が続けて出ても、ス
     } catch(e){}
   }, 150);
 }
-const say = t => { $('#whisper').textContent = t; if(t) keepVisible(); };
+const say = t => { $('#whisper').textContent = t; };
 function scrollEnd(el){ try { el.scrollIntoView({block:'end', behavior: reduce ? 'auto' : 'smooth'}); } catch(e){} }
 /* 手紙用：新しい行まで、ゆっくり（約1秒）スクロールする。読んでいる行が急に流れないように */
 let scrollTok = 0;

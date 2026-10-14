@@ -161,7 +161,8 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
 .progress i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width 2.8s linear}
 .navrow{display:grid;grid-template-columns:auto 1fr;gap:.6rem}
 #back[hidden]+#next{grid-column:1/-1}   /* Q1は「戻る」がないので、次へを全幅に */
-.pspage{position:fixed;inset:0;z-index:15;background:#000;display:grid;place-items:center;padding:2rem 1.6rem}
+.pspage{position:fixed;inset:0 0 -30vh 0;z-index:15;background:#000;display:grid;place-items:center;padding:2rem 1.6rem}
+#s-dark.ps .letter,#s-dark.ps .log,#s-dark.ps .lights{visibility:hidden}   /* 追伸の黒いページでは、手紙の文字を裏にも残さない */
 .pspage p{max-width:30rem;line-height:2.1;font-size:1rem;color:var(--sub);font-family:var(--f-voice);text-align:left}
 .cut{position:fixed;inset:0;background:#000;z-index:20;display:grid;place-items:center;color:#8d7d82;font-family:var(--f-voice);padding:1rem}
 
@@ -411,7 +412,7 @@ const store = {
   set(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch(e){} }
 };
 /* 公開URL（末尾スラッシュ付き）。未設定の間は共有文にURLを入れない */
-const VERSION = '1.3.58', BUILD = '2026-10-14';
+const VERSION = '1.3.59', BUILD = '2026-10-14';
 const BASE_URL = 'https://atuapfp.github.io/oshi-and-me/';
 const HAS_URL = BASE_URL.indexOf('__') !== 0;
 const HASHTAG = '推しとわたし診断';
@@ -1173,7 +1174,7 @@ async function breakdown(){
   await flick();
   show('dark');
   paintLights($('#lightsD'), 0);
-  const log = $('#log'); log.textContent = ''; $('#letter').textContent = ''; $('#psPage').hidden = true; $('#psText').textContent = '';
+  const log = $('#log'); log.textContent = ''; $('#letter').textContent = ''; $('#psPage').hidden = true; $('#s-dark').classList.remove('ps'); $('#psText').textContent = '';
   for(const t of logLines()){
     const d = document.createElement('div'); d.textContent = '> ' + t; log.append(d);
     await wait(300);
@@ -1225,6 +1226,7 @@ async function breakdown(){
     await pace(600);
     await flick();
     try { window.scrollTo(0, 0); } catch(_){}
+    $('#s-dark').classList.add('ps');
     $('#psPage').hidden = false;
     await pace(500);
     if(reduce) $('#psText').textContent = psLine; else await typeInto($('#psText'), psLine, 25);

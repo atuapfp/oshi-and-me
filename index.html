@@ -124,6 +124,9 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
 .type{font-size:clamp(1.8rem,7.5vw,2.4rem);font-weight:900;line-height:1.25;margin-top:.15rem;text-wrap:balance}
 .resline{margin-top:.6rem}
 .cue{margin-top:.9rem;text-align:center;font-size:.85rem;font-weight:700;color:var(--accent-text);animation:cue 1.6s ease-in-out infinite}
+#next.glow:not(:disabled){animation:nextglow 1.8s ease-in-out infinite}
+@keyframes nextglow{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}50%{box-shadow:0 0 14px 2px var(--accent)}}
+.nexthint{margin:0 0 .5rem}
 @keyframes cue{0%,100%{transform:translateY(0);opacity:.55}50%{transform:translateY(5px);opacity:1}}
 .maphead{margin-top:1.2rem;font-size:.85rem;font-weight:700}
 .map svg{display:block;width:100%;max-width:15rem;height:auto;margin-top:.3rem}
@@ -157,6 +160,7 @@ body[data-phase="2"] .rec,body[data-phase="3"] .rec{display:inline}
 .progress{height:10px;border-radius:99px;background:var(--card);border:1px solid var(--line);overflow:hidden;margin-top:1.4rem}
 .progress i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width 2.8s linear}
 .navrow{display:grid;grid-template-columns:auto 1fr;gap:.6rem}
+#back[hidden]+#next{grid-column:1/-1}   /* Q1は「戻る」がないので、次へを全幅に */
 .pspage{position:fixed;inset:0;z-index:15;background:#000;display:grid;place-items:center;padding:2rem 1.6rem}
 .pspage p{max-width:30rem;line-height:2.1;font-size:1rem;color:var(--sub);font-family:var(--f-voice);text-align:left}
 .cut{position:fixed;inset:0;background:#000;z-index:20;display:grid;place-items:center;color:#8d7d82;font-family:var(--f-voice);padding:1rem}
@@ -281,6 +285,7 @@ details.fold.small summary{font-size:.85rem}
       <p class="whisper" id="whisper" aria-live="polite"></p>
     </div>
     <div class="nextrow">
+      <p class="cue nexthint" id="nextHint" hidden>▼ 選んだら、「次へ」を押してください</p>
       <div class="navrow">
         <button class="btn ghost" id="back" type="button" hidden>戻る</button>
         <button class="btn" id="next" type="button" disabled>次へ</button>
@@ -406,7 +411,7 @@ const store = {
   set(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch(e){} }
 };
 /* 公開URL（末尾スラッシュ付き）。未設定の間は共有文にURLを入れない */
-const VERSION = '1.3.57', BUILD = '2026-10-14';
+const VERSION = '1.3.58', BUILD = '2026-10-14';
 const BASE_URL = 'https://atuapfp.github.io/oshi-and-me/';
 const HAS_URL = BASE_URL.indexOf('__') !== 0;
 const HASHTAG = '推しとわたし診断';
@@ -816,6 +821,7 @@ function renderQ(i, restore){
   });
   voiceTok++; $('#voice').textContent = ''; $('#whisper').textContent = '';
   $('#back').hidden = i === 0;
+  $('#nextHint').hidden = true; $('#next').classList.remove('glow');
   $('#aside').classList.add('reserve');
   const nx = $('#next'); nx.disabled = true;
   nx.textContent = i === Q.length - 1 ? '結果を見る' : (i >= 6 ? 'つぎへ…' : '次へ');
@@ -869,7 +875,7 @@ function pick(k){
     state.firstMs[i] = Date.now() - state.qAt;
   }
   state.sel = k;
-  if(i === 0 && !changed) nudgeNext();   // 1問目だけ：選ぶと「次へ」が見える位置まで動かし、選択→次へ、の流れを覚えてもらう
+  if(i === 0 && !changed){ $('#nextHint').hidden = false; $('#next').classList.add('glow'); nudgeNext(); }   // 1問目だけ：選ぶと「次へ」が見える位置まで動かし、選択→次へ、の流れを覚えてもらう
   if(Q[i].vv){ clearTimeout(state.voiceT); state.voiceShown = true; typeVoice(fmt(Q[i].vv[k]), 50); }
   else if(Q[i].v && !state.voiceShown){ clearTimeout(state.voiceT); showVoice(); }
   [...$('#opts').children].forEach((b, idx) => b.setAttribute('aria-checked', String(idx === k)));
